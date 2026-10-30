@@ -10,7 +10,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { IconBack } from './icons'
+import { IconBack, IconDown } from './icons'
 import { num, parseNum } from '../lib/format'
 
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ')
@@ -30,7 +30,7 @@ export function TopBar({
 }) {
   const nav = useNavigate()
   return (
-    <header className="safe-top sticky top-0 z-30 border-b border-line bg-bg/90 backdrop-blur-md">
+    <header className="safe-top sticky top-0 z-30 border-b border-line bg-bg">
       <div className="flex h-14 items-center gap-1 px-2">
         {back ? (
           <button
@@ -302,6 +302,44 @@ export function Segmented<T extends string>({
   )
 }
 
+/** Выпадающий список со стрелочкой (системный выбор телефона) */
+export function Select<T extends string>({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder = 'Не выбрано',
+  className,
+}: {
+  label?: ReactNode
+  value: T
+  onChange: (v: T) => void
+  options: { value: T; label: string }[]
+  placeholder?: string
+  className?: string
+}) {
+  return (
+    <label className={cx('block', className)}>
+      {label && <Label>{label}</Label>}
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value as T)}
+          className={cx(inputCls, 'appearance-none pr-10', !value && 'text-muted/60')}
+        >
+          <option value="">{placeholder}</option>
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <IconDown size={20} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
+      </div>
+    </label>
+  )
+}
+
 /* ---------------- Нижняя шторка (модальное окно) ---------------- */
 
 export function Sheet({
@@ -327,19 +365,113 @@ export function Sheet({
   }, [open])
   if (!open) return null
   return createPortal(
+    <SheetPanel onClose={onClose} title={title} footer={footer}>
+      {children}
+    </SheetPanel>,
+    document.body,
+  )
+}
+
+/** Шторка, которую можно смахнуть вниз пальцем */
+function SheetPanel({
+  onClose,
+  title,
+  children,
+  footer,
+}: {
+  onClose: () => void
+  title?: ReactNode
+  children: ReactNode
+  footer?: ReactNode
+}) {
+  const panel = useRef<HTMLDivElement>(null)
+  const scroller = useRef<HTMLDivElement>(null)
+  const backdrop = useRef<HTMLDivElement>(null)
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
+
+  useEffect(() => {
+    const el = panel.current
+    if (!el) return
+    let startY = 0
+    let startT = 0
+    let dy = 0
+    let dragging = false
+    let tracking = false
+
+    const setY = (y: number, animate: boolean) => {
+      el.style.transition = animate ? 'transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none'
+      el.style.transform = y ? `translateY(${y}px)` : ''
+      if (backdrop.current) {
+        backdrop.current.style.transition = el.style.transition.replace('transform', 'opacity')
+        backdrop.current.style.opacity = String(Math.max(0, 1 - y / (el.offsetHeight || 600)))
+      }
+    }
+
+    const onStart = (e: TouchEvent) => {
+      const target = e.target as HTMLElement
+      // не перехватываем жест, если палец в поле ввода или содержимое прокручено вниз
+      const field = target.closest('input, textarea, select')
+      const inField = !!field && field === document.activeElement
+      const atTop = !scroller.current || scroller.current.scrollTop <= 0 || !scroller.current.contains(target)
+      tracking = !inField && atTop
+      dragging = false
+      startY = e.touches[0].clientY
+      startT = Date.now()
+      dy = 0
+    }
+    const onMove = (e: TouchEvent) => {
+      if (!tracking) return
+      const d = e.touches[0].clientY - startY
+      if (!dragging) {
+        if (d > 6) dragging = true
+        else if (d < -6) {
+          tracking = false
+          return
+        } else return
+      }
+      dy = Math.max(0, d)
+      e.preventDefault()
+      setY(dy, false)
+    }
+    const onEnd = () => {
+      if (!dragging) return
+      dragging = false
+      tracking = false
+      const v = dy / Math.max(1, Date.now() - startT)
+      if (dy > 110 || (v > 0.6 && dy > 30)) {
+        setY(el.offsetHeight, true)
+        setTimeout(() => closeRef.current(), 200)
+      } else setY(0, true)
+    }
+
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false })
+    el.addEventListener('touchend', onEnd)
+    el.addEventListener('touchcancel', onEnd)
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove', onMove)
+      el.removeEventListener('touchend', onEnd)
+      el.removeEventListener('touchcancel', onEnd)
+    }
+  }, [])
+
+  return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
-      <div className="anim-fade absolute inset-0 bg-black/55" onClick={onClose} />
-      <div className="anim-sheet relative flex max-h-[92dvh] flex-col rounded-t-3xl border-t border-line bg-bg">
-        <div className="flex justify-center pt-2.5">
+      <div ref={backdrop} className="anim-fade absolute inset-0 bg-black/55" onClick={onClose} />
+      <div ref={panel} className="anim-sheet relative mx-auto flex max-h-[92dvh] w-full max-w-xl flex-col rounded-t-3xl border-t border-line bg-bg">
+        <div className="flex cursor-grab justify-center pb-1 pt-2.5">
           <div className="h-1.5 w-10 rounded-full bg-line" />
         </div>
-        {title && <div className="px-5 pb-2 pt-3 text-lg font-semibold">{title}</div>}
-        <div className="flex-1 overflow-y-auto px-4 pb-4">{children}</div>
+        {title && <div className="px-5 pb-2 pt-2 text-lg font-semibold">{title}</div>}
+        <div ref={scroller} className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
+          {children}
+        </div>
         {footer && <div className="safe-bottom border-t border-line px-4 pt-3 pb-3">{footer}</div>}
         {!footer && <div className="safe-bottom" />}
       </div>
-    </div>,
-    document.body,
+    </div>
   )
 }
 

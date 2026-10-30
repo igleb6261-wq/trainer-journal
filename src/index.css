@@ -115,6 +115,20 @@ select {
   font: inherit;
 }
 
+/* Поле даты на iPhone: не вылезает за рамку и выровнено как остальные поля */
+input[type='date'] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  min-height: calc(1.4em + 1.5rem + 2px);
+  text-align: left;
+}
+input[type='date']::-webkit-date-and-time-value {
+  text-align: left;
+}
+
 .tabular {
   font-variant-numeric: tabular-nums;
 }

@@ -23,8 +23,10 @@ export default function ProfileTab({ client }: { client: Client }) {
   }
 
   const saveAnswers = async () => {
-    await db.clients.update(client.id, { answers: draft, updatedAt: Date.now() })
     setEdit(false)
+    const changed = JSON.stringify(draft) !== JSON.stringify(client.answers)
+    if (!changed) return
+    await db.clients.update(client.id, { answers: draft, updatedAt: Date.now() })
     toast('Анкета сохранена')
   }
 
@@ -103,7 +105,7 @@ export default function ProfileTab({ client }: { client: Client }) {
 
       <Sheet
         open={edit}
-        onClose={() => setEdit(false)}
+        onClose={saveAnswers}
         title="Анкета"
         footer={
           <Button variant="primary" size="lg" block onClick={saveAnswers}>

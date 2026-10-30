@@ -101,7 +101,7 @@ export default function ClientPage() {
         )}
       </div>
 
-      <div className="no-scrollbar sticky top-[calc(env(safe-area-inset-top)+56px)] z-20 mt-3 flex gap-1 overflow-x-auto border-b border-line bg-bg/95 px-3 backdrop-blur-md">
+      <div className="no-scrollbar sticky top-[calc(env(safe-area-inset-top)+56px)] z-20 mt-3 flex gap-1 overflow-x-auto border-b border-line bg-bg px-3">
         {TABS.map((t) => (
           <button
             key={t.key}

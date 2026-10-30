@@ -188,7 +188,7 @@ export default function ProgramEditor() {
         </Button>
       </div>
 
-      <div className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg/95 backdrop-blur-md">
+      <div className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg">
         <div className="mx-auto max-w-xl px-4 py-3">
           <Button
             variant="primary"

@@ -34,7 +34,7 @@ function BottomNav() {
     </NavLink>
   )
   return (
-    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/95 backdrop-blur-md">
+    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg">
       <div className="mx-auto flex h-[60px] max-w-xl">
         {item('/', 'Клиенты', <IconUsers />, true)}
         {item('/journal', 'Журнал', <IconJournal />)}
