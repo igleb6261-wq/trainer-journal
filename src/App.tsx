@@ -1,0 +1,78 @@
+import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { useEffect, type ReactNode } from 'react'
+import { IconJournal, IconSettings, IconUsers } from './components/icons'
+import { ToastHost, cx } from './components/ui'
+import ClientsList from './pages/ClientsList'
+import ClientForm from './pages/ClientForm'
+import ClientPage from './pages/ClientPage'
+import ProgramEditor from './pages/ProgramEditor'
+import WorkoutRunner from './pages/WorkoutRunner'
+import ExerciseProgress from './pages/ExerciseProgress'
+import Journal from './pages/Journal'
+import Settings from './pages/Settings'
+import { QuestionsEditor, MetricsEditor, ExercisesEditor } from './pages/SettingsEditors'
+
+function ScrollTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+  return null
+}
+
+function BottomNav() {
+  const item = (to: string, label: string, icon: ReactNode, end = false) => (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        cx('flex flex-1 flex-col items-center gap-0.5 pt-2 text-[11px] font-medium', isActive ? 'text-accent-text' : 'text-muted')
+      }
+    >
+      {icon}
+      {label}
+    </NavLink>
+  )
+  return (
+    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/95 backdrop-blur-md">
+      <div className="mx-auto flex h-[60px] max-w-xl">
+        {item('/', 'Клиенты', <IconUsers />, true)}
+        {item('/journal', 'Журнал', <IconJournal />)}
+        {item('/settings', 'Настройки', <IconSettings />)}
+      </div>
+    </nav>
+  )
+}
+
+const withNav = (el: ReactNode) => (
+  <>
+    <div className="pb-nav">{el}</div>
+    <BottomNav />
+  </>
+)
+
+export default function App() {
+  return (
+    <HashRouter>
+      <ScrollTop />
+      <ToastHost />
+      <div className="mx-auto min-h-dvh max-w-xl">
+        <Routes>
+          <Route path="/" element={withNav(<ClientsList />)} />
+          <Route path="/journal" element={withNav(<Journal />)} />
+          <Route path="/settings" element={withNav(<Settings />)} />
+          <Route path="/settings/questions" element={<QuestionsEditor />} />
+          <Route path="/settings/metrics" element={<MetricsEditor />} />
+          <Route path="/settings/exercises" element={<ExercisesEditor />} />
+          <Route path="/client/new" element={<ClientForm />} />
+          <Route path="/client/:id" element={withNav(<ClientPage />)} />
+          <Route path="/client/:id/edit" element={<ClientForm />} />
+          <Route path="/client/:id/program/:programId" element={<ProgramEditor />} />
+          <Route path="/client/:id/workout/:workoutId" element={<WorkoutRunner />} />
+          <Route path="/client/:id/progress" element={<ExerciseProgress />} />
+          <Route path="*" element={withNav(<ClientsList />)} />
+        </Routes>
+      </div>
+    </HashRouter>
+  )
+}
