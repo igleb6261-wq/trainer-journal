@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Client, type Workout } from '../../db'
-import { Button, Card, Chip, Empty, cx } from '../../components/ui'
-import { IconChart, IconDown, IconEdit, IconFlag } from '../../components/icons'
+import { Button, Card, Chip, Empty, confirmAsk, cx, toast } from '../../components/ui'
+import { IconChart, IconDown, IconEdit, IconFlag, IconTrash } from '../../components/icons'
 import { fmtDateLong, weekday } from '../../lib/format'
 import { setsLine, workoutSummary } from '../../lib/summary'
 
@@ -109,15 +109,43 @@ export default function HistoryTab({ client }: { client: Client }) {
                       <div className="mt-0.5 whitespace-pre-wrap text-sm">{w.comment}</div>
                     </div>
                   )}
-                  <Button size="sm" className="mt-4" onClick={() => nav(`/client/${client.id}/workout/${w.id}`)}>
-                    <IconEdit size={16} /> Редактировать
-                  </Button>
+                  <div className="mt-4 flex gap-2">
+                    <Button size="sm" onClick={() => nav(`/client/${client.id}/workout/${w.id}`)}>
+                      <IconEdit size={16} /> Редактировать
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={async () => {
+                        if (!confirmAsk(`Удалить тренировку от ${fmtDateLong(w.date)}? Это нельзя отменить.`)) return
+                        await db.workouts.delete(w.id)
+                        toast('Тренировка удалена')
+                      }}
+                    >
+                      <IconTrash size={16} /> Удалить
+                    </Button>
+                  </div>
                 </div>
               )}
             </Card>
           )
         })}
       </div>
+
+      <Button
+        variant="danger"
+        block
+        className="mt-6"
+        onClick={async () => {
+          if (!confirmAsk(`Удалить ВСЮ историю тренировок клиента (${done.length})? Программа, анкета, замеры и фото останутся. Это нельзя отменить.`))
+            return
+          if (!confirmAsk('Точно очистить историю? Перед этим лучше сделать резервную копию в Настройках.')) return
+          await db.workouts.bulkDelete(done.map((w) => w.id))
+          toast('История тренировок очищена')
+        }}
+      >
+        <IconTrash size={18} /> Очистить историю тренировок
+      </Button>
     </div>
   )
 }
