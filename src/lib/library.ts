@@ -7,6 +7,36 @@ import { db, exKey, getSetting, setSetting, stamp, type ExerciseRef } from '../d
 
 export const MY_GROUP = 'Мои упражнения'
 
+/** Вкладка «Базовые упражнения» — не группа мышц, а подборка из разных групп */
+export const BASIC_TAB = 'Базовые упражнения'
+
+/** Самые популярные базовые (многосуставные) упражнения — в порядке показа */
+export const BASIC_EXERCISES = [
+  'Приседания со штангой',
+  'Становая тяга',
+  'Жим штанги лёжа',
+  'Жим штанги стоя (армейский жим)',
+  'Подтягивания широким хватом',
+  'Тяга штанги в наклоне',
+  'Румынская тяга',
+  'Фронтальные приседания',
+  'Становая тяга сумо',
+  'Жим штанги на наклонной скамье',
+  'Жим гантелей лёжа',
+  'Жим гантелей сидя',
+  'Отжимания на брусьях',
+  'Подтягивания обратным хватом',
+  'Тяга гантели в наклоне одной рукой',
+  'Тяга верхнего блока к груди',
+  'Тяга горизонтального блока к поясу',
+  'Жим ногами',
+  'Выпады с гантелями',
+  'Болгарские сплит-приседания',
+  'Ягодичный мост со штангой (хип-траст)',
+  'Жим штанги узким хватом',
+  'Отжимания от пола',
+]
+
 export const EXERCISE_GROUPS: { group: string; items: string[] }[] = [
   {
     group: 'Грудь',
@@ -167,7 +197,7 @@ export const GROUP_NAMES = [...EXERCISE_GROUPS.map((g) => g.group), MY_GROUP]
 /** Порядок упражнения внутри своей группы (базовые — первыми) */
 export const LIB_INDEX = new Map(EXERCISE_GROUPS.flatMap((g) => g.items.map((n, i) => [exKey(n), i] as [string, number])))
 
-const LIBRARY_VERSION = 1
+const LIBRARY_VERSION = 2
 
 /** Добавляет библиотеку в справочник (один раз; повторно — только новые упражнения новой версии) */
 export async function seedLibrary() {
@@ -183,14 +213,26 @@ export async function seedLibrary() {
       if (ex) {
         if (!ex.group) await db.exercises.update(ex.id, { group: g.group })
       } else {
-        const e = { ...stamp(), name, key, group: g.group }
+        const e: ExerciseRef = { ...stamp(), name, key, group: g.group }
         toAdd.push(e)
         byKey.set(key, e)
       }
     }
   }
   await db.exercises.bulkAdd(toAdd)
+  // v2: отметка «базовое»
+  if (v < 2) {
+    for (const name of BASIC_EXERCISES) {
+      const ex = byKey.get(exKey(name))
+      if (ex && ex.basic === undefined) await db.exercises.update(ex.id, { basic: true })
+    }
+  }
   await setSetting('libraryVersion', LIBRARY_VERSION)
 }
 
 export const groupOf = (e: ExerciseRef) => e.group || MY_GROUP
+
+const BASIC_INDEX = new Map(BASIC_EXERCISES.map((n, i) => [exKey(n), i]))
+/** Базовые упражнения из списка, отсортированные по популярности */
+export const basicOf = (list: ExerciseRef[]) =>
+  list.filter((e) => e.basic).sort((a, b) => (BASIC_INDEX.get(a.key) ?? 999) - (BASIC_INDEX.get(b.key) ?? 999))

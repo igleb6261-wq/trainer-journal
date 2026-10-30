@@ -4,7 +4,7 @@ import { db, DEFAULT_METRICS, DEFAULT_QUESTIONS, exKey, setSetting, stamp, uid, 
 import { Button, Card, IconButton, TopBar, confirmAsk, cx, toast } from '../components/ui'
 import { IconArrowDown, IconArrowUp, IconPlus, IconSearch, IconTrash } from '../components/icons'
 import { useMetrics, useQuestions } from '../lib/hooks'
-import { GROUP_NAMES, LIB_INDEX, MY_GROUP, groupOf } from '../lib/library'
+import { BASIC_TAB, GROUP_NAMES, LIB_INDEX, MY_GROUP, groupOf } from '../lib/library'
 
 function move<T>(arr: T[], i: number, d: number): T[] {
   const j = i + d
@@ -166,11 +166,11 @@ export function ExercisesEditor() {
   const [group, setGroup] = useState<string | null>(null)
 
   const s = exKey(q)
-  const groups = GROUP_NAMES.filter((g) => (all ?? []).some((e) => groupOf(e) === g))
+  const groups = [BASIC_TAB, ...GROUP_NAMES.filter((g) => (all ?? []).some((e) => groupOf(e) === g))]
   const list = useMemo(
     () =>
       (all ?? [])
-        .filter((e) => (!s || e.key.includes(s)) && (!group || groupOf(e) === group))
+        .filter((e) => (!s || e.key.includes(s)) && (!group || (group === BASIC_TAB ? !!e.basic : groupOf(e) === group)))
         .sort(
           (a, b) =>
             GROUP_NAMES.indexOf(groupOf(a)) - GROUP_NAMES.indexOf(groupOf(b)) ||
@@ -279,6 +279,15 @@ export function ExercisesEditor() {
                     </option>
                   ))}
                 </select>
+                <button
+                  className={cx(
+                    'h-8 shrink-0 rounded-lg px-2 text-[12px] font-medium',
+                    e.basic ? 'bg-accent-soft text-accent-text' : 'bg-surface-2 text-muted',
+                  )}
+                  onClick={() => db.exercises.update(e.id, { basic: !e.basic, updatedAt: Date.now() })}
+                >
+                  {e.basic ? '★ базовое' : '☆ базовое'}
+                </button>
                 <IconButton
                   className="h-9 w-9 text-danger"
                   onClick={() => confirmAsk(`Удалить «${e.name}» из библиотеки? В тренировках оно останется.`) && db.exercises.delete(e.id)}

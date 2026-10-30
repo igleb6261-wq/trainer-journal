@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, exKey, type ExerciseRef } from '../db'
-import { GROUP_NAMES, LIB_INDEX, groupOf } from '../lib/library'
+import { BASIC_TAB, GROUP_NAMES, LIB_INDEX, basicOf, groupOf } from '../lib/library'
 import { Button, Sheet, cx } from './ui'
 import { IconCheck, IconPlus, IconSearch } from './icons'
 
@@ -41,11 +41,14 @@ export function ExercisePicker({
     () => (catalog ?? []).filter((e) => !exclude.includes(e.key)).sort((a, b) => a.name.localeCompare(b.name, 'ru')),
     [catalog, exclude],
   )
-  const groups = GROUP_NAMES.filter((g) => available.some((e) => groupOf(e) === g))
+  const basics = basicOf(available)
+  const groups = [...(basics.length ? [BASIC_TAB] : []), ...GROUP_NAMES.filter((g) => available.some((e) => groupOf(e) === g))]
 
   // порядок внутри группы — как в библиотеке (базовые первыми), свои — по алфавиту в конце
   const inGroup = (g: string) =>
-    available
+    g === BASIC_TAB
+      ? basics
+      : available
       .filter((e) => groupOf(e) === g)
       .sort((a, b) => (LIB_INDEX.get(a.key) ?? 999) - (LIB_INDEX.get(b.key) ?? 999))
 
@@ -166,7 +169,7 @@ export function ExercisePicker({
             <div className="mb-1.5 px-1 text-[13px] font-semibold uppercase tracking-wide text-muted">{g}</div>
             <div className="overflow-hidden rounded-2xl border border-line bg-surface">
               {inGroup(g).map((e) => (
-                <Item key={e.id} e={e} />
+                <Item key={e.id} e={e} showGroup={g === BASIC_TAB} />
               ))}
             </div>
           </div>
