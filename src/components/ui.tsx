@@ -639,3 +639,143 @@ export function Fab({ onClick, label, icon }: { onClick: () => void; label: stri
 }
 
 export const confirmAsk = (text: string) => window.confirm(text)
+
+/* ---------------- Смахивание влево для удаления ---------------- */
+
+/**
+ * Карточка, которую можно смахнуть справа налево:
+ * короткий свайп — показывает кнопку «Удалить», длинный — сразу удаляет.
+ * onDelete возвращает false, если удаление отменили (карточка вернётся на место).
+ */
+export function SwipeToDelete({
+  children,
+  onDelete,
+  className,
+}: {
+  children: ReactNode
+  onDelete: () => Promise<boolean> | boolean
+  className?: string
+}) {
+  const fg = useRef<HTMLDivElement>(null)
+  const bg = useRef<HTMLButtonElement>(null)
+  const wrap = useRef<HTMLDivElement>(null)
+  const state = useRef({ x: 0, open: false })
+  const REVEAL = 96
+
+  const setX = (x: number, animate: boolean) => {
+    const el = fg.current
+    if (!el) return
+    state.current.x = x
+    el.style.transition = animate ? 'transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none'
+    el.style.transform = x ? `translateX(${x}px)` : ''
+    if (bg.current) bg.current.style.visibility = x < 0 ? 'visible' : 'hidden'
+  }
+
+  const doDelete = async () => {
+    const w = wrap.current?.offsetWidth ?? 400
+    setX(-w, true)
+    const ok = await onDelete()
+    if (!ok) {
+      setX(0, true)
+      state.current.open = false
+    }
+  }
+
+  useEffect(() => {
+    const el = fg.current
+    if (!el) return
+    let sx = 0
+    let sy = 0
+    let base = 0
+    let axis: 'x' | 'y' | null = null
+    let moved = false
+
+    const start = (e: TouchEvent) => {
+      sx = e.touches[0].clientX
+      sy = e.touches[0].clientY
+      base = state.current.x
+      axis = null
+      moved = false
+    }
+    const move = (e: TouchEvent) => {
+      const dx = e.touches[0].clientX - sx
+      const dy = e.touches[0].clientY - sy
+      if (!axis) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+        axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+      }
+      if (axis !== 'x') return
+      e.preventDefault()
+      moved = true
+      setX(Math.min(0, base + dx), false)
+    }
+    const end = () => {
+      if (axis !== 'x') return
+      const w = wrap.current?.offsetWidth ?? 400
+      const x = state.current.x
+      if (x < -w * 0.5) {
+        state.current.open = false
+        doDelete()
+      } else if (x < -50) {
+        state.current.open = true
+        setX(-REVEAL, true)
+      } else {
+        state.current.open = false
+        setX(0, true)
+      }
+    }
+    // если карточка приоткрыта — первое нажатие просто закрывает её
+    const click = (e: MouseEvent) => {
+      if (moved || state.current.open) {
+        e.stopPropagation()
+        e.preventDefault()
+        if (!moved) {
+          state.current.open = false
+          setX(0, true)
+        }
+        moved = false
+      }
+    }
+    el.addEventListener('touchstart', start, { passive: true })
+    el.addEventListener('touchmove', move, { passive: false })
+    el.addEventListener('touchend', end)
+    el.addEventListener('touchcancel', end)
+    el.addEventListener('click', click, true)
+    return () => {
+      el.removeEventListener('touchstart', start)
+      el.removeEventListener('touchmove', move)
+      el.removeEventListener('touchend', end)
+      el.removeEventListener('touchcancel', end)
+      el.removeEventListener('click', click, true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return (
+    <div ref={wrap} className={cx('relative overflow-hidden rounded-2xl', className)}>
+      <button
+        ref={bg}
+        style={{ visibility: 'hidden' }}
+        className="absolute inset-y-0 right-0 flex w-full items-center justify-end bg-danger pr-6 text-[15px] font-semibold text-white"
+        onClick={doDelete}
+        aria-label="Удалить"
+      >
+        <span className="flex flex-col items-center gap-1" style={{ width: REVEAL - 24 }}>
+          <IconTrashSmall />
+          Удалить
+        </span>
+      </button>
+      <div ref={fg} className="relative" style={{ touchAction: 'pan-y' }}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function IconTrashSmall() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+    </svg>
+  )
+}

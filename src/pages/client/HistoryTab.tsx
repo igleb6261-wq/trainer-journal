@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Client, type Workout } from '../../db'
-import { Button, Card, Chip, Empty, confirmAsk, cx, toast } from '../../components/ui'
+import { Button, Card, Chip, Empty, SwipeToDelete, confirmAsk, cx, toast } from '../../components/ui'
 import { IconChart, IconDown, IconEdit, IconFlag, IconTrash } from '../../components/icons'
 import { fmtDateLong, weekday } from '../../lib/format'
 import { setsLine, workoutSummary } from '../../lib/summary'
@@ -31,7 +31,16 @@ export default function HistoryTab({ client }: { client: Client }) {
           const { chips, unchanged } = workoutSummary(w, all)
           const isOpen = !!open[w.id]
           return (
-            <Card key={w.id} className="overflow-hidden">
+            <SwipeToDelete
+              key={w.id}
+              onDelete={async () => {
+                if (!confirmAsk(`Удалить тренировку от ${fmtDateLong(w.date)}? Это нельзя отменить.`)) return false
+                await db.workouts.delete(w.id)
+                toast('Тренировка удалена')
+                return true
+              }}
+            >
+            <Card className="overflow-hidden">
               <button className="block w-full px-4 pt-3 text-left" onClick={() => setOpen((o) => ({ ...o, [w.id]: !isOpen }))}>
                 <div className="flex items-start gap-2">
                   <div className="min-w-0 flex-1">
@@ -141,6 +150,7 @@ export default function HistoryTab({ client }: { client: Client }) {
                 </div>
               )}
             </Card>
+            </SwipeToDelete>
           )
         })}
       </div>
