@@ -8,6 +8,7 @@ import { exportBackup, importBackup, markBackupDone, shareOrDownload } from '../
 import { daysAgo, plural } from '../lib/format'
 import { getTheme, setTheme, type Theme } from '../lib/theme'
 import { deleteDemo, loadDemo } from '../lib/demo'
+import { checkForUpdate, hardReload } from '../lib/update'
 
 export default function Settings() {
   const nav = useNavigate()
@@ -163,6 +164,38 @@ export default function Settings() {
                 Загрузить демо-данные
               </Button>
             )}
+          </Card>
+        </Section>
+
+        <Section title="Обновление приложения">
+          <Card className="p-4">
+            <div className="text-sm text-muted">
+              Приложение обновляется само при открытии. Если правки не появились — нажми кнопку. Данные клиентов не
+              затрагиваются.
+            </div>
+            <div className="mt-2 text-sm">
+              Версия: <b className="tabular">{__APP_VERSION__}</b>
+            </div>
+            <Button
+              block
+              className="mt-3"
+              disabled={!!busy}
+              onClick={async () => {
+                setBusy('update')
+                try {
+                  const found = await checkForUpdate()
+                  if (found) toast('Нашлась новая версия, обновляю…')
+                  else {
+                    toast('Перезагружаю приложение…')
+                    await hardReload()
+                  }
+                } finally {
+                  setBusy(null)
+                }
+              }}
+            >
+              {busy === 'update' ? 'Проверяю…' : 'Обновить приложение'}
+            </Button>
           </Card>
         </Section>
 
