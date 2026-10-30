@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, stamp, uid, type Client, type Program } from '../../db'
 import { ActionSheet, Button, Card, Empty, IconButton, Section, Sheet, confirmAsk, toast } from '../../components/ui'
-import { IconChevron, IconMore, IconPlay, IconPlus } from '../../components/icons'
+import { IconChevron, IconEdit, IconMore, IconPlay, IconPlus, IconTrash } from '../../components/icons'
 import { planTarget, startWorkout } from '../../lib/workout'
 import { fmtDate } from '../../lib/format'
 
@@ -34,6 +34,17 @@ export default function ProgramTab({ client, activeWorkoutId }: { client: Client
   const sorted = [...programs].sort((a, b) => Number(b.active) - Number(a.active) || b.updatedAt - a.updatedAt)
   const active = sorted.find((p) => p.active) ?? null
   const others = sorted.filter((p) => p !== active)
+
+  const deleteProgram = async (p: Program) => {
+    if (!confirmAsk(`Удалить программу «${p.name}»? История проведённых тренировок останется.`)) return
+    await db.programs.delete(p.id)
+    // если удалили текущую — текущей становится последняя изменённая из оставшихся
+    if (p.active) {
+      const rest = programs.filter((x) => x.id !== p.id).sort((a, b) => b.updatedAt - a.updatedAt)
+      if (rest[0]) await db.programs.update(rest[0].id, { active: true })
+    }
+    toast('Программа удалена')
+  }
 
   const begin = async (dayId: string | null) => {
     setPick(false)
@@ -85,7 +96,7 @@ export default function ProgramTab({ client, activeWorkoutId }: { client: Client
               <div className="flex items-center gap-2 border-b border-line px-4 py-3">
                 <div className="flex-1">
                   <div className="text-[16px] font-semibold">{active.name}</div>
-                  <div className="text-xs text-muted">обновлена {fmtDate(new Date(active.updatedAt).toISOString().slice(0, 10))} · нажми, чтобы изменить</div>
+                  <div className="text-xs text-muted">обновлена {fmtDate(new Date(active.updatedAt).toISOString().slice(0, 10))} </div>
                 </div>
                 <IconChevron size={18} className="text-muted" />
               </div>
@@ -109,6 +120,14 @@ export default function ProgramTab({ client, activeWorkoutId }: { client: Client
                 </div>
               ))}
             </Card>
+            <div className="mt-2.5 grid grid-cols-2 gap-2">
+              <Button onClick={() => nav(`/client/${client.id}/program/${active.id}`)}>
+                <IconEdit size={18} /> Редактировать
+              </Button>
+              <Button variant="danger" onClick={() => deleteProgram(active)}>
+                <IconTrash size={18} /> Удалить
+              </Button>
+            </div>
           </Section>
 
           {others.length > 0 && (
@@ -190,11 +209,7 @@ export default function ProgramTab({ client, activeWorkoutId }: { client: Client
                 {
                   label: 'Удалить программу',
                   danger: true,
-                  onClick: async () => {
-                    if (!confirmAsk(`Удалить программу «${menuFor.name}»? История тренировок останется.`)) return
-                    await db.programs.delete(menuFor.id)
-                    toast('Программа удалена')
-                  },
+                  onClick: () => deleteProgram(menuFor),
                 },
               ]
             : []
