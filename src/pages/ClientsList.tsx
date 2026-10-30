@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import { Avatar } from '../components/media'
-import { Button, Card, Empty, Fab, Segmented, TopBar, toast } from '../components/ui'
-import { IconChevron, IconPlay, IconPlus, IconSearch } from '../components/icons'
-import { daysAgo, fullName, plural } from '../lib/format'
+import { Button, Card, Empty, IconButton, Segmented, TopBar, cx, toast } from '../components/ui'
+import { IconPlay, IconPlus, IconSearch } from '../components/icons'
+import { daysAgo, fmtDate, fullName, plural } from '../lib/format'
 import { loadDemo } from '../lib/demo'
 import { useBackupReminder } from '../lib/hooks'
 
@@ -48,6 +48,13 @@ export default function ClientsList() {
       <TopBar
         title="Мои клиенты"
         subtitle={`${list.length} ${plural(list.length, 'клиент', 'клиента', 'клиентов')}`}
+        right={
+          clients.length > 0 && (
+            <IconButton className="text-accent-text" onClick={() => nav('/client/new')} aria-label="Новый клиент">
+              <IconPlus size={28} />
+            </IconButton>
+          )
+        }
       />
       <div className="px-4 pt-3">
         {backupDue && clients.length > 0 && (
@@ -66,7 +73,7 @@ export default function ClientsList() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Поиск по имени"
-              className="w-full rounded-xl border border-line bg-surface py-3 pl-10 pr-3.5 text-[16px] outline-none placeholder:text-muted/60 focus:border-accent-text"
+              className="w-full rounded-xl border border-transparent bg-surface py-3 pl-10 pr-3.5 text-[16px] outline-none placeholder:text-muted/60 focus:border-accent-text"
             />
           </div>
         )}
@@ -106,43 +113,43 @@ export default function ClientsList() {
         ) : list.length === 0 ? (
           <Empty title="Никого не нашлось" />
         ) : (
-          <Card className="mt-3 overflow-hidden">
-            {list.map((c) => {
+          <div className="-mx-4 mt-3 bg-surface">
+            {list.map((c, i) => {
               const info = lastByClient.get(c.id)
               return (
                 <div
                   key={c.id}
-                  className="flex cursor-pointer items-center gap-3 border-b border-line px-4 py-3 last:border-b-0 active:bg-surface-2"
+                  className="flex cursor-pointer items-center gap-3 pl-3 active:bg-surface-2"
                   onClick={() => nav(`/client/${c.id}`)}
                 >
-                  <Avatar client={c} size={46} />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[16px] font-medium">
-                      {fullName(c)}
-                      {c.demo && <span className="ml-1.5 text-xs text-muted">демо</span>}
+                  <Avatar client={c} size={56} />
+                  <div className={cx('min-w-0 flex-1 py-2.5 pr-4', i < list.length - 1 && 'border-b border-line')}>
+                    <div className="flex items-baseline gap-2">
+                      <div className="min-w-0 flex-1 truncate text-[16px] font-semibold">
+                        {fullName(c)}
+                        {c.demo && <span className="ml-1.5 text-xs font-normal text-muted">демо</span>}
+                      </div>
+                      {info?.last && <div className="shrink-0 text-[13px] text-muted">{fmtDate(info.last)}</div>}
                     </div>
-                    <div className="truncate text-[13px] text-muted">
+                    <div className="mt-0.5 line-clamp-2 text-[15px] leading-snug text-muted">
                       {info?.active ? (
-                        <span className="inline-flex items-center gap-1 font-medium text-accent-text">
+                        <span className="inline-flex items-center gap-1 text-accent-text">
                           <IconPlay size={11} /> идёт тренировка
                         </span>
                       ) : info?.last ? (
-                        `Последняя тренировка: ${daysAgo(info.last)}`
+                        `Последняя тренировка ${daysAgo(info.last)}`
                       ) : (
                         'Тренировок ещё не было'
                       )}
+                      {c.goal && <span> · {c.goal}</span>}
                     </div>
                   </div>
-                  <IconChevron size={18} className="text-muted" />
                 </div>
               )
             })}
-          </Card>
+          </div>
         )}
       </div>
-      {clients.length > 0 && view === 'active' && (
-        <Fab onClick={() => nav('/client/new')} label="Клиент" icon={<IconPlus size={20} />} />
-      )}
     </div>
   )
 }

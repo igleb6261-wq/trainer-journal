@@ -26,7 +26,7 @@ function move<T>(arr: T[], i: number, d: number): T[] {
 }
 
 const cell =
-  'w-full rounded-lg border border-line bg-surface-2 px-2 py-2.5 text-center text-[16px] outline-none tabular focus:border-accent-text'
+  'w-full rounded-lg border border-transparent bg-surface-2 px-2 py-2.5 text-center text-[16px] outline-none tabular focus:border-accent-text'
 
 export default function ProgramEditor() {
   const { id = '', programId = '' } = useParams()

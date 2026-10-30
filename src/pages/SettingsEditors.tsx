@@ -209,13 +209,13 @@ export function ExercisesEditor() {
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && add()}
             placeholder="Новое упражнение"
-            className="w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-[16px] outline-none focus:border-accent-text"
+            className="w-full rounded-xl border border-transparent bg-surface px-3.5 py-3 text-[16px] outline-none focus:border-accent-text"
           />
           <div className="flex gap-2">
             <select
               value={newGroup}
               onChange={(e) => setNewGroup(e.target.value)}
-              className="min-w-0 flex-1 rounded-xl border border-line bg-surface px-3 py-2.5 text-[15px] outline-none"
+              className="min-w-0 flex-1 rounded-xl border border-transparent bg-surface px-3 py-2.5 text-[15px] outline-none"
             >
               {GROUP_NAMES.map((g) => (
                 <option key={g} value={g}>
@@ -235,7 +235,7 @@ export function ExercisesEditor() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Поиск"
-            className="w-full rounded-xl border border-line bg-surface py-3 pl-10 pr-3.5 text-[16px] outline-none focus:border-accent-text"
+            className="w-full rounded-xl border border-transparent bg-surface py-3 pl-10 pr-3.5 text-[16px] outline-none focus:border-accent-text"
           />
         </div>
         <div className="no-scrollbar -mx-4 mt-2 flex gap-1.5 overflow-x-auto px-4">

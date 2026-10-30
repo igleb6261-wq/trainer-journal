@@ -12,7 +12,7 @@ import { ExercisePicker } from '../components/ExercisePicker'
 const sortDesc = (a: Workout, b: Workout) => (a.date === b.date ? b.createdAt - a.createdAt : b.date.localeCompare(a.date))
 
 const cell =
-  'w-full rounded-lg border border-line bg-surface-2 px-1 py-2.5 text-center text-[17px] font-medium outline-none tabular focus:border-accent-text'
+  'w-full rounded-lg border border-transparent bg-surface-2 px-1 py-2.5 text-center text-[17px] font-medium outline-none tabular focus:border-accent-text'
 
 export default function WorkoutRunner() {
   const { id = '', workoutId = '' } = useParams()
@@ -364,7 +364,7 @@ export default function WorkoutRunner() {
           type="date"
           value={w.date}
           onChange={(e) => e.target.value && update((x) => ({ ...x, date: e.target.value }))}
-          className="w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-[16px] outline-none"
+          className="w-full rounded-xl border border-transparent bg-surface px-3.5 py-3 text-[16px] outline-none"
         />
         <div className="mt-2 px-1 text-sm text-muted">{fmtDateLong(w.date)}, {weekday(w.date)}</div>
       </Sheet>

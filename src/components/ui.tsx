@@ -36,7 +36,7 @@ function InSlot({ slot, children }: { slot: 'header' | 'footer'; children: React
 export function BottomBar({ children }: { children: ReactNode }) {
   return (
     <InSlot slot="footer">
-      <div className="safe-bottom border-t border-line bg-bg">{children}</div>
+      <div className="safe-bottom border-t border-line bg-bar">{children}</div>
     </InSlot>
   )
 }
@@ -57,26 +57,29 @@ export function TopBar({
   const nav = useNavigate()
   return (
     <InSlot slot="header">
-    <header className="safe-top border-b border-line bg-bg">
-      <div className="flex h-14 items-center gap-1 px-2">
-        {back ? (
-          <button
-            className="-ml-1 flex h-11 w-11 items-center justify-center rounded-full text-ink active:bg-surface-2"
-            onClick={() => (typeof back === 'string' ? nav(back) : nav(-1))}
-            aria-label="Назад"
-          >
-            <IconBack size={26} />
-          </button>
-        ) : (
-          <div className="w-2" />
-        )}
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-[18px] font-bold leading-snug tracking-tight">{title}</div>
-          {subtitle && <div className="truncate text-xs text-muted">{subtitle}</div>}
+      <header className="safe-top border-b border-line bg-bar">
+        <div className="relative flex h-12 items-center px-1">
+          {/* слева: «‹ Назад» синим, как в Telegram */}
+          <div className="z-10 flex min-w-[72px] items-center">
+            {back && (
+              <button
+                className="flex h-11 items-center pl-0.5 pr-2 text-[17px] text-accent-text active:opacity-50"
+                onClick={() => (typeof back === 'string' ? nav(back) : nav(-1))}
+                aria-label="Назад"
+              >
+                <IconBack size={28} strokeWidth={2.4} />
+                <span className="-ml-1">Назад</span>
+              </button>
+            )}
+          </div>
+          {/* по центру: заголовок */}
+          <div className="pointer-events-none absolute inset-x-[88px] text-center">
+            <div className="truncate text-[17px] font-semibold leading-tight">{title}</div>
+            {subtitle && <div className="truncate text-[13px] leading-tight text-muted">{subtitle}</div>}
+          </div>
+          <div className="z-10 ml-auto flex min-w-[72px] items-center justify-end text-accent-text">{right}</div>
         </div>
-        <div className="flex items-center gap-1">{right}</div>
-      </div>
-    </header>
+      </header>
     </InSlot>
   )
 }
@@ -114,7 +117,7 @@ export function Button({
   return (
     <button
       className={cx(
-        'inline-flex select-none items-center justify-center gap-2 rounded-2xl font-semibold transition active:scale-[0.98] disabled:opacity-40',
+        'inline-flex select-none items-center justify-center gap-2 rounded-xl font-semibold transition active:opacity-70 disabled:opacity-40',
         size === 'sm' && 'h-9 px-3 text-sm',
         size === 'md' && 'h-12 px-4 text-[15px]',
         size === 'lg' && 'h-14 px-5 text-base',
@@ -138,7 +141,7 @@ export function Button({
 export function Card({ children, className, onClick }: { children: ReactNode; className?: string; onClick?: () => void }) {
   return (
     <div
-      className={cx('rounded-2xl border border-line bg-surface', onClick && 'cursor-pointer active:bg-surface-2', className)}
+      className={cx('rounded-xl bg-surface', onClick && 'cursor-pointer active:bg-surface-2', className)}
       onClick={onClick}
     >
       {children}
@@ -203,7 +206,7 @@ export function Label({ children }: { children: ReactNode }) {
 }
 
 const inputCls =
-  'w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-[16px] text-ink outline-none placeholder:text-muted/60 focus:border-accent-text'
+  'w-full rounded-xl border border-transparent bg-surface px-3.5 py-3 text-[16px] text-ink outline-none placeholder:text-muted/70 focus:border-accent-text'
 
 export function Field({
   label,
@@ -519,7 +522,7 @@ function SheetPanel({
   return (
     <div ref={wrap} className="fixed inset-0 z-50 flex flex-col justify-end">
       <div ref={backdrop} className="anim-fade absolute inset-0 bg-black/55" onClick={onClose} />
-      <div ref={panel} className="anim-sheet relative mx-auto flex max-h-[92dvh] w-full max-w-xl flex-col rounded-t-3xl border-t border-line bg-bg">
+      <div ref={panel} className="anim-sheet relative mx-auto flex max-h-[92dvh] w-full max-w-xl flex-col rounded-t-2xl bg-bg">
         <div className="flex cursor-grab justify-center pb-1 pt-2.5">
           <div className="h-1.5 w-10 rounded-full bg-line" />
         </div>
@@ -548,7 +551,7 @@ export function ActionSheet({
 }) {
   return (
     <Sheet open={open} onClose={onClose} title={title}>
-      <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+      <div className="overflow-hidden rounded-xl bg-surface">
         {actions.map((a, i) => (
           <button
             key={i}
@@ -594,7 +597,7 @@ export function ToastHost() {
       {items.map((t) => (
         <div
           key={t.id}
-          className="anim-fade rounded-2xl border border-line bg-surface px-4 py-3 text-sm font-medium shadow-lg"
+          className="anim-fade rounded-xl bg-surface-2/95 px-4 py-3 text-sm font-medium shadow-lg backdrop-blur"
         >
           {t.text}
         </div>
@@ -752,7 +755,7 @@ export function SwipeToDelete({
   }, [])
 
   return (
-    <div ref={wrap} className={cx('relative overflow-hidden rounded-2xl', className)}>
+    <div ref={wrap} className={cx('relative overflow-hidden rounded-xl', className)}>
       <button
         ref={bg}
         style={{ visibility: 'hidden' }}

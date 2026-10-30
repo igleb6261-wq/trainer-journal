@@ -55,8 +55,7 @@ export default function ClientPage() {
   return (
     <div>
       <TopBar
-        title={fullName(client)}
-        subtitle={sub || undefined}
+        title=""
         back="/"
         right={
           <IconButton onClick={() => setMenu(true)} aria-label="Ещё">
@@ -66,15 +65,16 @@ export default function ClientPage() {
       />
 
       <div className="px-4 pt-3">
-        <div className="flex items-center gap-3">
-          <Avatar client={client} size={56} />
-          <div className="min-w-0 flex-1 text-sm text-muted">
-            {client.goal ? <div className="line-clamp-2 text-ink">{client.goal}</div> : <div>Цель не указана</div>}
-            <div className="mt-0.5">
-              {done.length} {plural(done.length, 'тренировка', 'тренировки', 'тренировок')}
-              {last && ` · последняя ${daysAgo(last.date)}`}
-            </div>
+        {/* профиль по центру, как в мессенджере */}
+        <div className="flex flex-col items-center pb-1 pt-2 text-center">
+          <Avatar client={client} size={88} />
+          <div className="mt-2.5 text-[22px] font-semibold leading-tight">{fullName(client)}</div>
+          {sub && <div className="mt-1 text-[14px] text-muted">{sub}</div>}
+          <div className="mt-0.5 text-[14px] text-muted">
+            {done.length} {plural(done.length, 'тренировка', 'тренировки', 'тренировок')}
+            {last && ` · последняя ${daysAgo(last.date)}`}
           </div>
+          {client.goal && <div className="mt-2 line-clamp-3 max-w-sm text-[15px]">{client.goal}</div>}
         </div>
 
         {active && (
@@ -101,7 +101,7 @@ export default function ClientPage() {
         )}
       </div>
 
-      <div className="no-scrollbar sticky top-0 z-20 mt-3 flex gap-1 overflow-x-auto border-b border-line bg-bg px-3">
+      <div className="no-scrollbar sticky top-0 z-20 mt-3 flex gap-1 overflow-x-auto border-b border-line bg-bar px-3">
         {TABS.map((t) => (
           <button
             key={t.key}

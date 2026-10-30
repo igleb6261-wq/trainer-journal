@@ -219,7 +219,7 @@ function CompareSheet({ open, onClose, photos }: { open: boolean; onClose: () =>
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-[15px] outline-none"
+      className="w-full rounded-xl border border-transparent bg-surface px-3 py-2.5 text-[15px] outline-none"
     >
       {dates.map((d) => (
         <option key={d} value={d}>

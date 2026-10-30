@@ -27,7 +27,7 @@ function BottomNav() {
       to={to}
       end={end}
       className={({ isActive }) =>
-        cx('flex flex-1 flex-col items-center gap-0.5 pt-2 text-[11px] font-medium', isActive ? 'text-accent-text' : 'text-muted')
+        cx('flex flex-1 flex-col items-center gap-0.5 pt-1.5 text-[10px] font-medium', isActive ? 'text-accent-text' : 'text-muted')
       }
     >
       {icon}
@@ -36,11 +36,11 @@ function BottomNav() {
   )
   const footer = document.getElementById('footer-slot')
   const navEl = (
-    <nav className="safe-bottom border-t border-line bg-bg">
-      <div className="flex h-[60px]">
-        {item('/', 'Клиенты', <IconUsers />, true)}
-        {item('/journal', 'Журнал', <IconJournal />)}
-        {item('/settings', 'Настройки', <IconSettings />)}
+    <nav className="safe-bottom border-t border-line bg-bar">
+      <div className="flex h-[52px]">
+        {item('/', 'Клиенты', <IconUsers size={26} />, true)}
+        {item('/journal', 'Журнал', <IconJournal size={26} />)}
+        {item('/settings', 'Настройки', <IconSettings size={26} />)}
       </div>
     </nav>
   )

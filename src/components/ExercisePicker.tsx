@@ -113,7 +113,7 @@ export function ExercisePicker({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Поиск упражнения"
-            className="w-full rounded-xl border border-line bg-surface py-3 pl-10 pr-3.5 text-[16px] outline-none focus:border-accent-text"
+            className="w-full rounded-xl border border-transparent bg-surface py-3 pl-10 pr-3.5 text-[16px] outline-none focus:border-accent-text"
           />
         </div>
         {!s && (
@@ -158,7 +158,7 @@ export function ExercisePicker({
       )}
 
       {list ? (
-        <div className="mt-2 overflow-hidden rounded-2xl border border-line bg-surface">
+        <div className="mt-2 overflow-hidden rounded-xl bg-surface">
           {list.map((e) => (
             <Item key={e.id} e={e} showGroup />
           ))}
@@ -168,7 +168,7 @@ export function ExercisePicker({
         (group ? [group] : groups).map((g) => (
           <div key={g} className="mt-3">
             <div className="mb-1.5 px-1 text-[13px] font-semibold uppercase tracking-wide text-muted">{g}</div>
-            <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+            <div className="overflow-hidden rounded-xl bg-surface">
               {inGroup(g).map((e) => (
                 <Item key={e.id} e={e} showGroup={g === BASIC_TAB} />
               ))}

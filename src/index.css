@@ -1,76 +1,80 @@
 @import 'tailwindcss';
 
-/* ============ Цвета (тёмная тема — по умолчанию) ============ */
+/* ============ Цвета в стиле Telegram (тёмная тема — по умолчанию) ============ */
 :root {
-  --bg: #0f1115;
-  --surface: #171a21;
-  --surface-2: #1f232c;
-  --border: #2a2f3a;
-  --text: #eef0f3;
-  --muted: #8b93a1;
-  --accent: #c6f432;
-  --accent-ink: #11140a;
-  --accent-text: #c6f432;
-  --accent-soft: rgba(198, 244, 50, 0.12);
-  --danger: #ff6b6b;
-  --danger-soft: rgba(255, 107, 107, 0.12);
-  --up: #4ade80;
-  --up-soft: rgba(74, 222, 128, 0.12);
-  --down: #fb923c;
-  --down-soft: rgba(251, 146, 60, 0.12);
-  --note: #7dd3fc;
-  --note-soft: rgba(125, 211, 252, 0.12);
+  --bg: #000000;
+  --bar: #1c1c1d;
+  --surface: #1c1c1e;
+  --surface-2: #2c2c2e;
+  --border: #38383a;
+  --text: #ffffff;
+  --muted: #8e8e93;
+  --accent: #3e88f7;
+  --accent-ink: #ffffff;
+  --accent-text: #3e88f7;
+  --accent-soft: rgba(62, 136, 247, 0.16);
+  --danger: #ff453a;
+  --danger-soft: rgba(255, 69, 58, 0.16);
+  --up: #30d158;
+  --up-soft: rgba(48, 209, 88, 0.16);
+  --down: #ff9f0a;
+  --down-soft: rgba(255, 159, 10, 0.16);
+  --note: #bf5af2;
+  --note-soft: rgba(191, 90, 242, 0.16);
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) {
-    --bg: #f3f4f0;
+    --bg: #efeff4;
+    --bar: #f7f7f7;
     --surface: #ffffff;
-    --surface-2: #eaece6;
-    --border: #dcdfd6;
-    --text: #15181d;
-    --muted: #616a76;
-    --accent: #c6f432;
-    --accent-ink: #15181d;
-    --accent-text: #4a6800;
-    --accent-soft: rgba(120, 160, 0, 0.12);
-    --danger: #d23636;
-    --danger-soft: rgba(210, 54, 54, 0.1);
-    --up: #15803d;
-    --up-soft: rgba(21, 128, 61, 0.1);
-    --down: #c2410c;
-    --down-soft: rgba(194, 65, 12, 0.1);
-    --note: #0369a1;
-    --note-soft: rgba(3, 105, 161, 0.1);
+    --surface-2: #f2f2f7;
+    --border: #d9d9de;
+    --text: #000000;
+    --muted: #8e8e93;
+    --accent: #007aff;
+    --accent-ink: #ffffff;
+    --accent-text: #007aff;
+    --accent-soft: rgba(0, 122, 255, 0.1);
+    --danger: #ff3b30;
+    --danger-soft: rgba(255, 59, 48, 0.1);
+    --up: #34c759;
+    --up-soft: rgba(52, 199, 89, 0.12);
+    --down: #ff9500;
+    --down-soft: rgba(255, 149, 0, 0.12);
+    --note: #af52de;
+    --note-soft: rgba(175, 82, 222, 0.1);
     color-scheme: light;
   }
 }
 
 :root[data-theme='light'] {
-  --bg: #f3f4f0;
+  --bg: #efeff4;
+  --bar: #f7f7f7;
   --surface: #ffffff;
-  --surface-2: #eaece6;
-  --border: #dcdfd6;
-  --text: #15181d;
-  --muted: #616a76;
-  --accent: #c6f432;
-  --accent-ink: #15181d;
-  --accent-text: #4a6800;
-  --accent-soft: rgba(120, 160, 0, 0.12);
-  --danger: #d23636;
-  --danger-soft: rgba(210, 54, 54, 0.1);
-  --up: #15803d;
-  --up-soft: rgba(21, 128, 61, 0.1);
-  --down: #c2410c;
-  --down-soft: rgba(194, 65, 12, 0.1);
-  --note: #0369a1;
-  --note-soft: rgba(3, 105, 161, 0.1);
+  --surface-2: #f2f2f7;
+  --border: #d9d9de;
+  --text: #000000;
+  --muted: #8e8e93;
+  --accent: #007aff;
+  --accent-ink: #ffffff;
+  --accent-text: #007aff;
+  --accent-soft: rgba(0, 122, 255, 0.1);
+  --danger: #ff3b30;
+  --danger-soft: rgba(255, 59, 48, 0.1);
+  --up: #34c759;
+  --up-soft: rgba(52, 199, 89, 0.12);
+  --down: #ff9500;
+  --down-soft: rgba(255, 149, 0, 0.12);
+  --note: #af52de;
+  --note-soft: rgba(175, 82, 222, 0.1);
   color-scheme: light;
 }
 
 @theme inline {
   --color-bg: var(--bg);
+  --color-bar: var(--bar);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-line: var(--border);
