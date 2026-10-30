@@ -4,7 +4,7 @@ import { db, DEFAULT_METRICS, DEFAULT_QUESTIONS, exKey, setSetting, stamp, uid, 
 import { Button, Card, IconButton, TopBar, confirmAsk, cx, toast } from '../components/ui'
 import { IconArrowDown, IconArrowUp, IconPlus, IconSearch, IconTrash } from '../components/icons'
 import { useMetrics, useQuestions } from '../lib/hooks'
-import { BASIC_TAB, GROUP_NAMES, LIB_INDEX, MY_GROUP, groupOf } from '../lib/library'
+import { BASIC_TAB, GROUP_NAMES, LIB_INDEX, MY_GROUP, groupOf, matchesQuery } from '../lib/library'
 
 function move<T>(arr: T[], i: number, d: number): T[] {
   const j = i + d
@@ -170,7 +170,7 @@ export function ExercisesEditor() {
   const list = useMemo(
     () =>
       (all ?? [])
-        .filter((e) => (!s || e.key.includes(s)) && (!group || (group === BASIC_TAB ? !!e.basic : groupOf(e) === group)))
+        .filter((e) => (!s || matchesQuery(e.key, q)) && (!group || (group === BASIC_TAB ? !!e.basic : groupOf(e) === group)))
         .sort(
           (a, b) =>
             GROUP_NAMES.indexOf(groupOf(a)) - GROUP_NAMES.indexOf(groupOf(b)) ||

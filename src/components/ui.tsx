@@ -376,12 +376,15 @@ export function Sheet({
   title,
   children,
   footer,
+  tall,
 }: {
   open: boolean
   onClose: () => void
   title?: ReactNode
   children: ReactNode
   footer?: ReactNode
+  /** шторка всегда на всю высоту (для списков с поиском) */
+  tall?: boolean
 }) {
   useEffect(() => {
     if (!open) return
@@ -393,7 +396,7 @@ export function Sheet({
   }, [open])
   if (!open) return null
   return createPortal(
-    <SheetPanel onClose={onClose} title={title} footer={footer}>
+    <SheetPanel onClose={onClose} title={title} footer={footer} tall={tall}>
       {children}
     </SheetPanel>,
     document.body,
@@ -406,13 +409,41 @@ function SheetPanel({
   title,
   children,
   footer,
+  tall,
 }: {
   onClose: () => void
   title?: ReactNode
   children: ReactNode
   footer?: ReactNode
+  tall?: boolean
 }) {
   const panel = useRef<HTMLDivElement>(null)
+  const wrap = useRef<HTMLDivElement>(null)
+
+  // Клавиатура телефона: шторка поднимается над ней и не уезжает под неё
+  useEffect(() => {
+    const vv = window.visualViewport
+    const apply = () => {
+      const h = vv ? vv.height : window.innerHeight
+      const kb = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0
+      if (wrap.current) {
+        wrap.current.style.paddingBottom = kb ? `${kb}px` : ''
+        if (vv) wrap.current.style.top = `${vv.offsetTop}px`
+      }
+      if (panel.current) {
+        panel.current.style.maxHeight = `${Math.round(h * 0.92)}px`
+        if (tall) panel.current.style.height = `${Math.round(h * 0.92)}px`
+      }
+    }
+    apply()
+    vv?.addEventListener('resize', apply)
+    vv?.addEventListener('scroll', apply)
+    return () => {
+      vv?.removeEventListener('resize', apply)
+      vv?.removeEventListener('scroll', apply)
+    }
+  }, [tall])
+
   const scroller = useRef<HTMLDivElement>(null)
   const backdrop = useRef<HTMLDivElement>(null)
   const closeRef = useRef(onClose)
@@ -486,7 +517,7 @@ function SheetPanel({
   }, [])
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+    <div ref={wrap} className="fixed inset-0 z-50 flex flex-col justify-end">
       <div ref={backdrop} className="anim-fade absolute inset-0 bg-black/55" onClick={onClose} />
       <div ref={panel} className="anim-sheet relative mx-auto flex max-h-[92dvh] w-full max-w-xl flex-col rounded-t-3xl border-t border-line bg-bg">
         <div className="flex cursor-grab justify-center pb-1 pt-2.5">

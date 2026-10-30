@@ -236,3 +236,21 @@ const BASIC_INDEX = new Map(BASIC_EXERCISES.map((n, i) => [exKey(n), i]))
 /** Базовые упражнения из списка, отсортированные по популярности */
 export const basicOf = (list: ExerciseRef[]) =>
   list.filter((e) => e.basic).sort((a, b) => (BASIC_INDEX.get(a.key) ?? 999) - (BASIC_INDEX.get(b.key) ?? 999))
+
+/**
+ * Поиск упражнения: слова в любом порядке, окончания не важны
+ * («тяга штанга» найдёт «Тяга штанги в наклоне»).
+ */
+export function matchesQuery(key: string, query: string): boolean {
+  const q = exKey(query)
+  if (!q) return true
+  if (key.includes(q)) return true
+  const words = key.split(/[\s()«»,.-]+/)
+  return q
+    .split(' ')
+    .filter(Boolean)
+    .every((t) => {
+      const stem = t.length > 4 ? t.slice(0, Math.max(4, t.length - 2)) : t
+      return words.some((w) => w.startsWith(stem)) || key.includes(t)
+    })
+}

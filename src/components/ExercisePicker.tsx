@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, exKey, type ExerciseRef } from '../db'
-import { BASIC_TAB, GROUP_NAMES, LIB_INDEX, basicOf, groupOf } from '../lib/library'
+import { BASIC_TAB, GROUP_NAMES, LIB_INDEX, basicOf, groupOf, matchesQuery } from '../lib/library'
 import { Button, Sheet, cx } from './ui'
 import { IconCheck, IconPlus, IconSearch } from './icons'
 
@@ -90,13 +90,14 @@ export function ExercisePicker({
     )
   }
 
-  const list = s ? available.filter((e) => e.key.includes(s)) : null
+  const list = s ? available.filter((e) => matchesQuery(e.key, q)) : null
 
   return (
     <Sheet
       open={open}
       onClose={onClose}
       title={title}
+      tall
       footer={
         multi && picked.length > 0 ? (
           <Button variant="primary" size="lg" block onClick={() => onPick(picked)}>
