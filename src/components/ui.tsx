@@ -531,7 +531,7 @@ export function ToastHost() {
     }
   }, [])
   return createPortal(
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex flex-col items-center gap-2 px-4 pt-[calc(env(safe-area-inset-top)+12px)]">
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex flex-col items-center gap-2 px-4 pt-[calc(var(--top-inset)+12px)]">
       {items.map((t) => (
         <div
           key={t.id}

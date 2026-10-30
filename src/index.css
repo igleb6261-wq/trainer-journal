@@ -136,8 +136,18 @@ input[type='date']::-webkit-date-and-time-value {
   font-variant-numeric: tabular-nums;
 }
 
+/* Отступ сверху. На iPhone в приложении с экрана «Домой» система размывает
+   полосу под строкой состояния — поэтому там опускаем шапку чуть ниже. */
+:root {
+  --top-inset: env(safe-area-inset-top);
+}
+@media (display-mode: standalone) {
+  :root {
+    --top-inset: calc(env(safe-area-inset-top) + 26px);
+  }
+}
 .safe-top {
-  padding-top: env(safe-area-inset-top);
+  padding-top: var(--top-inset);
 }
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
