@@ -43,6 +43,19 @@ export default function HistoryTab({ client }: { client: Client }) {
                       {w.dayName || 'Свободная тренировка'} · {w.exercises.length} упр.
                     </div>
                   </div>
+                  <span
+                    role="button"
+                    aria-label="Удалить тренировку"
+                    className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted active:bg-danger-soft active:text-danger"
+                    onClick={async (ev) => {
+                      ev.stopPropagation()
+                      if (!confirmAsk(`Удалить тренировку от ${fmtDateLong(w.date)}? Это нельзя отменить.`)) return
+                      await db.workouts.delete(w.id)
+                      toast('Тренировка удалена')
+                    }}
+                  >
+                    <IconTrash size={18} />
+                  </span>
                   <IconDown size={20} className={cx('mt-1 shrink-0 text-muted transition', isOpen && 'rotate-180')} />
                 </div>
 
