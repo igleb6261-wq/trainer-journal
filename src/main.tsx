@@ -5,10 +5,12 @@ import App from './App'
 import { requestPersistence } from './db'
 import { applyTheme, getTheme } from './lib/theme'
 import { setupAutoUpdate } from './lib/update'
+import { seedLibrary } from './lib/library'
 
 applyTheme(getTheme())
 requestPersistence()
 setupAutoUpdate()
+seedLibrary()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

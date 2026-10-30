@@ -3,10 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, exKey, rememberExercise, type SetEntry, type Workout, type WorkoutExercise } from '../db'
 import { ActionSheet, Button, Card, IconButton, NumField, Sheet, TextArea, TopBar, confirmAsk, cx, toast, BottomBar } from '../components/ui'
-import { IconCheck, IconFlag, IconMore, IconPlus, IconSearch, IconTrash } from '../components/icons'
+import { IconCheck, IconFlag, IconMore, IconPlus, IconTrash } from '../components/icons'
 import { daysAgo, fmtDate, fmtDateLong, fullName, weekday } from '../lib/format'
 import { findPrevious, setsLine } from '../lib/summary'
 import { buildExercise, emptySet } from '../lib/workout'
+import { ExercisePicker } from '../components/ExercisePicker'
 
 const sortDesc = (a: Workout, b: Workout) => (a.date === b.date ? b.createdAt - a.createdAt : b.date.localeCompare(a.date))
 
@@ -86,16 +87,19 @@ export default function WorkoutRunner() {
     nav(`/client/${id}?tab=history`, { replace: true })
   }
 
-  const addExercise = async (name: string) => {
-    const ex = await buildExercise(id, { name })
-    if (picker?.mode === 'replace') {
-      const exId = picker.exId
-      update((w) => ({ ...w, exercises: w.exercises.map((e) => (e.id === exId ? { ...ex, comment: e.comment } : e)) }))
-    } else {
-      update((w) => ({ ...w, exercises: [...w.exercises, ex] }))
-    }
-    rememberExercise(name)
+  const addExercises = async (names: string[]) => {
+    const mode = picker
     setPicker(null)
+    for (const name of names) {
+      const ex = await buildExercise(id, { name })
+      if (mode?.mode === 'replace') {
+        const exId = mode.exId
+        update((w) => ({ ...w, exercises: w.exercises.map((e) => (e.id === exId ? { ...ex, comment: e.comment } : e)) }))
+      } else {
+        update((w) => ({ ...w, exercises: [...w.exercises, ex] }))
+      }
+      rememberExercise(name)
+    }
   }
 
   const menuEx = w.exercises.find((e) => e.id === exMenu)
@@ -341,7 +345,8 @@ export default function WorkoutRunner() {
         open={!!picker}
         title={picker?.mode === 'replace' ? 'Заменить на…' : 'Добавить упражнение'}
         onClose={() => setPicker(null)}
-        onPick={addExercise}
+        onPick={addExercises}
+        multi={picker?.mode !== 'replace'}
         exclude={w.exercises.map((e) => exKey(e.name))}
       />
 
@@ -364,64 +369,5 @@ export default function WorkoutRunner() {
         <div className="mt-2 px-1 text-sm text-muted">{fmtDateLong(w.date)}, {weekday(w.date)}</div>
       </Sheet>
     </div>
-  )
-}
-
-/* ---------------- Выбор упражнения ---------------- */
-
-export function ExercisePicker({
-  open,
-  onClose,
-  onPick,
-  title,
-  exclude = [],
-}: {
-  open: boolean
-  onClose: () => void
-  onPick: (name: string) => void
-  title: string
-  exclude?: string[]
-}) {
-  const [q, setQ] = useState('')
-  const catalog = useLiveQuery(() => db.exercises.toArray(), [])
-  useEffect(() => {
-    if (open) setQ('')
-  }, [open])
-  const s = exKey(q)
-  const list = (catalog ?? [])
-    .filter((e) => (!s || e.key.includes(s)) && !exclude.includes(e.key))
-    .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
-    .slice(0, 60)
-  const exact = (catalog ?? []).some((e) => e.key === s)
-
-  return (
-    <Sheet open={open} onClose={onClose} title={title}>
-      <div className="relative">
-        <IconSearch size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Название упражнения"
-          className="w-full rounded-xl border border-line bg-surface py-3 pl-10 pr-3.5 text-[16px] outline-none focus:border-accent-text"
-        />
-      </div>
-      {q.trim() && !exact && (
-        <Button variant="primary" block className="mt-3" onClick={() => onPick(q.trim())}>
-          <IconPlus size={20} /> Добавить «{q.trim()}»
-        </Button>
-      )}
-      <div className="mt-3 overflow-hidden rounded-2xl border border-line bg-surface">
-        {list.map((e) => (
-          <button
-            key={e.id}
-            className="block w-full border-b border-line px-4 py-3.5 text-left text-[16px] last:border-b-0 active:bg-surface-2"
-            onClick={() => onPick(e.name)}
-          >
-            {e.name}
-          </button>
-        ))}
-        {list.length === 0 && <div className="px-4 py-6 text-center text-sm text-muted">Введи название нового упражнения</div>}
-      </div>
-    </Sheet>
   )
 }

@@ -4,6 +4,7 @@ import { db, DEFAULT_METRICS, DEFAULT_QUESTIONS, exKey, setSetting, stamp, uid, 
 import { Button, Card, IconButton, TopBar, confirmAsk, cx, toast } from '../components/ui'
 import { IconArrowDown, IconArrowUp, IconPlus, IconSearch, IconTrash } from '../components/icons'
 import { useMetrics, useQuestions } from '../lib/hooks'
+import { GROUP_NAMES, LIB_INDEX, MY_GROUP, groupOf } from '../lib/library'
 
 function move<T>(arr: T[], i: number, d: number): T[] {
   const j = i + d
@@ -155,17 +156,29 @@ export function MetricsEditor() {
   )
 }
 
-/* ---------------- Справочник упражнений ---------------- */
+/* ---------------- Библиотека упражнений ---------------- */
 
 export function ExercisesEditor() {
   const all = useLiveQuery(() => db.exercises.toArray(), [])
   const [q, setQ] = useState('')
   const [name, setName] = useState('')
+  const [newGroup, setNewGroup] = useState<string>(MY_GROUP)
+  const [group, setGroup] = useState<string | null>(null)
 
-  const list = useMemo(() => {
-    const s = exKey(q)
-    return (all ?? []).filter((e) => !s || e.key.includes(s)).sort((a, b) => a.name.localeCompare(b.name, 'ru'))
-  }, [all, q])
+  const s = exKey(q)
+  const groups = GROUP_NAMES.filter((g) => (all ?? []).some((e) => groupOf(e) === g))
+  const list = useMemo(
+    () =>
+      (all ?? [])
+        .filter((e) => (!s || e.key.includes(s)) && (!group || groupOf(e) === group))
+        .sort(
+          (a, b) =>
+            GROUP_NAMES.indexOf(groupOf(a)) - GROUP_NAMES.indexOf(groupOf(b)) ||
+            (LIB_INDEX.get(a.key) ?? 999) - (LIB_INDEX.get(b.key) ?? 999) ||
+            a.name.localeCompare(b.name, 'ru'),
+        ),
+    [all, s, group],
+  )
 
   const add = async () => {
     const n = name.trim()
@@ -175,30 +188,47 @@ export function ExercisesEditor() {
       toast('Такое упражнение уже есть')
       return
     }
-    await db.exercises.add({ ...stamp(), name: n, key })
+    await db.exercises.add({ ...stamp(), name: n, key, group: newGroup === MY_GROUP ? undefined : newGroup })
     setName('')
+    toast('Упражнение добавлено')
   }
 
+  const selCls = 'h-8 min-w-0 flex-1 rounded-lg bg-transparent px-1 text-[13px] text-muted outline-none'
+
   return (
-    <div className="pb-10">
-      <TopBar title="Справочник упражнений" subtitle={all ? `${all.length} шт.` : undefined} back />
+    <div className="pb-24">
+      <TopBar title="Библиотека упражнений" subtitle={all ? `${all.length} шт.` : undefined} back />
       <div className="px-4 pt-3">
         <p className="px-1 pb-3 text-sm text-muted">
-          Упражнения попадают сюда автоматически из программ. Их названия подсказываются при вводе — так не будет дублей
-          вроде «Жим лежа» и «Жим лёжа».
+          Отсюда выбираются упражнения в программе и тренировке. Можно добавить своё, переименовать, сменить группу или
+          удалить.
         </p>
-        <div className="flex gap-2">
+        <Card className="space-y-2 p-3">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && add()}
             placeholder="Новое упражнение"
-            className="min-w-0 flex-1 rounded-xl border border-line bg-surface px-3.5 py-3 text-[16px] outline-none focus:border-accent-text"
+            className="w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-[16px] outline-none focus:border-accent-text"
           />
-          <Button variant="primary" onClick={add}>
-            <IconPlus size={20} />
-          </Button>
-        </div>
+          <div className="flex gap-2">
+            <select
+              value={newGroup}
+              onChange={(e) => setNewGroup(e.target.value)}
+              className="min-w-0 flex-1 rounded-xl border border-line bg-surface px-3 py-2.5 text-[15px] outline-none"
+            >
+              {GROUP_NAMES.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
+            <Button variant="primary" onClick={add}>
+              <IconPlus size={20} /> Добавить
+            </Button>
+          </div>
+        </Card>
+
         <div className="relative mt-3">
           <IconSearch size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
           <input
@@ -208,24 +238,54 @@ export function ExercisesEditor() {
             className="w-full rounded-xl border border-line bg-surface py-3 pl-10 pr-3.5 text-[16px] outline-none focus:border-accent-text"
           />
         </div>
+        <div className="no-scrollbar -mx-4 mt-2 flex gap-1.5 overflow-x-auto px-4">
+          {[null, ...groups].map((g) => (
+            <button
+              key={g ?? 'all'}
+              onClick={() => setGroup(g)}
+              className={cx(
+                'shrink-0 rounded-full px-3 py-1.5 text-[13px] font-medium',
+                group === g ? 'bg-accent text-accent-ink' : 'bg-surface-2 text-muted',
+              )}
+            >
+              {g ?? 'Все'}
+            </button>
+          ))}
+        </div>
+
         {list.length > 0 && (
           <Card className="mt-3 overflow-hidden">
             {list.map((e) => (
-              <div key={e.id} className="flex items-center gap-1 border-b border-line px-2 py-1 last:border-b-0">
+              <div key={e.id} className="border-b border-line px-2 py-1.5 last:border-b-0">
                 <input
-                  className={smallInput}
+                  className={cx(smallInput, 'font-medium')}
                   defaultValue={e.name}
                   onBlur={async (ev) => {
                     const n = ev.target.value.trim()
                     if (n && n !== e.name) await db.exercises.update(e.id, { name: n, key: exKey(n), updatedAt: Date.now() })
                   }}
                 />
+                <div className="flex items-center gap-1 px-1">
+                <select
+                  className={selCls}
+                  value={groupOf(e)}
+                  onChange={(ev) =>
+                    db.exercises.update(e.id, { group: ev.target.value === MY_GROUP ? undefined : ev.target.value, updatedAt: Date.now() })
+                  }
+                >
+                  {GROUP_NAMES.map((g) => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </select>
                 <IconButton
                   className="h-9 w-9 text-danger"
-                  onClick={() => confirmAsk(`Удалить «${e.name}» из справочника? В тренировках оно останется.`) && db.exercises.delete(e.id)}
+                  onClick={() => confirmAsk(`Удалить «${e.name}» из библиотеки? В тренировках оно останется.`) && db.exercises.delete(e.id)}
                 >
                   <IconTrash size={18} />
                 </IconButton>
+                </div>
               </div>
             ))}
           </Card>

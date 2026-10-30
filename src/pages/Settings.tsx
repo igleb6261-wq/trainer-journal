@@ -113,7 +113,7 @@ export default function Settings() {
           <Card className="overflow-hidden">
             <Row label="Вопросы анкеты" onClick={() => nav('/settings/questions')} right={<IconChevron size={18} className="text-muted" />} />
             <Row label="Показатели замеров" onClick={() => nav('/settings/metrics')} right={<IconChevron size={18} className="text-muted" />} />
-            <Row label="Справочник упражнений" onClick={() => nav('/settings/exercises')} right={<IconChevron size={18} className="text-muted" />} />
+            <Row label="Библиотека упражнений" onClick={() => nav('/settings/exercises')} right={<IconChevron size={18} className="text-muted" />} />
           </Card>
         </Section>
 

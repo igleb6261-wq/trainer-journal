@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, rememberExercise, uid, type PlanExercise, type Program, type ProgramDay } from '../db'
+import { db, exKey, rememberExercise, uid, type PlanExercise, type Program, type ProgramDay } from '../db'
 import { ActionSheet, Button, Card, Field, IconButton, NumField, TextArea, TopBar, confirmAsk, cx, BottomBar } from '../components/ui'
 import { IconMore, IconPlus } from '../components/icons'
+import { ExercisePicker } from '../components/ExercisePicker'
 
 const newExercise = (): PlanExercise => ({
   id: uid(),
@@ -33,6 +34,8 @@ export default function ProgramEditor() {
   const [p, setP] = useState<Program | null>(null)
   const [dayMenu, setDayMenu] = useState<string | null>(null)
   const [exMenu, setExMenu] = useState<{ dayId: string; exId: string } | null>(null)
+  const [pickDay, setPickDay] = useState<string | null>(null)
+  const [replaceEx, setReplaceEx] = useState<{ dayId: string; exId: string } | null>(null)
   const catalog = useLiveQuery(() => db.exercises.orderBy('name').toArray(), [])
   const saveTimer = useRef<number | undefined>(undefined)
   const latest = useRef<Program | null>(null)
@@ -111,16 +114,15 @@ export default function ProgramEditor() {
           <div className="space-y-2.5">
             {d.exercises.map((e, ei) => (
               <Card key={e.id} className="p-3">
-                <div className="flex items-center gap-1">
-                  <span className="w-6 shrink-0 text-center text-sm text-muted tabular">{ei + 1}</span>
-                  <input
-                    list="exercise-list"
+                <div className="flex items-start gap-1">
+                  <span className="mt-2.5 w-6 shrink-0 text-center text-sm text-muted tabular">{ei + 1}</span>
+                  <TextArea
+                    minRows={1}
                     value={e.name}
-                    autoFocus={!e.name}
                     placeholder="Упражнение"
-                    onChange={(ev) => updEx(d.id, e.id, { name: ev.target.value })}
+                    onChange={(ev) => updEx(d.id, e.id, { name: ev.target.value.replace(/\n/g, ' ') })}
                     onBlur={(ev) => rememberExercise(ev.target.value)}
-                    className="min-w-0 flex-1 rounded-lg bg-transparent px-1.5 py-2 text-[16px] font-medium outline-none focus:bg-surface-2"
+                    className="min-w-0 flex-1 [&_textarea]:border-transparent [&_textarea]:bg-transparent [&_textarea]:px-1.5 [&_textarea]:py-2 [&_textarea]:font-medium [&_textarea]:leading-snug"
                   />
                   <IconButton className="h-9 w-9 text-muted" onClick={() => setExMenu({ dayId: d.id, exId: e.id })}>
                     <IconMore size={20} />
@@ -167,7 +169,7 @@ export default function ProgramEditor() {
             variant="soft"
             block
             className="mt-2.5"
-            onClick={() => updDay(d.id, (x) => ({ ...x, exercises: [...x.exercises, newExercise()] }))}
+            onClick={() => setPickDay(d.id)}
           >
             <IconPlus size={20} /> Упражнение в «{d.name || `День ${letters[di] ?? di + 1}`}»
           </Button>
@@ -206,6 +208,35 @@ export default function ProgramEditor() {
         </div>
       </BottomBar>
 
+      <ExercisePicker
+        open={!!pickDay}
+        multi
+        title="Добавить упражнения"
+        onClose={() => setPickDay(null)}
+        exclude={(p.days.find((d) => d.id === pickDay)?.exercises ?? []).map((e) => exKey(e.name))}
+        onPick={(names) => {
+          const dayId = pickDay
+          setPickDay(null)
+          if (!dayId) return
+          updDay(dayId, (x) => ({ ...x, exercises: [...x.exercises, ...names.map((n) => ({ ...newExercise(), name: n }))] }))
+          names.forEach((n) => rememberExercise(n))
+        }}
+      />
+
+      <ExercisePicker
+        open={!!replaceEx}
+        title="Заменить на…"
+        onClose={() => setReplaceEx(null)}
+        onPick={([n]) => {
+          const r = replaceEx
+          setReplaceEx(null)
+          if (r && n) {
+            updEx(r.dayId, r.exId, { name: n })
+            rememberExercise(n)
+          }
+        }}
+      />
+
       <ActionSheet
         open={!!menuEx}
         onClose={() => setExMenu(null)}
@@ -213,6 +244,10 @@ export default function ProgramEditor() {
         actions={
           menuEx
             ? [
+                {
+                  label: 'Заменить из библиотеки',
+                  onClick: () => setReplaceEx({ dayId: menuEx.dayId, exId: menuEx.ex.id }),
+                },
                 {
                   label: 'Переместить выше',
                   onClick: () => updDay(menuEx.dayId, (x) => ({ ...x, exercises: move(x.exercises, x.exercises.findIndex((y) => y.id === menuEx.ex.id), -1) })),

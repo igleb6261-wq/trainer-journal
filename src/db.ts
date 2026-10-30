@@ -112,6 +112,7 @@ export interface Photo extends Base {
 export interface ExerciseRef extends Base {
   name: string
   key: string // нормализованное имя (для поиска дублей)
+  group?: string // группа мышц (из библиотеки или своя)
 }
 
 export interface Setting {
