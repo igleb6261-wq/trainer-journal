@@ -1,4 +1,6 @@
 import {
+  createContext,
+  useContext,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -15,6 +17,30 @@ import { num, parseNum } from '../lib/format'
 
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ')
 
+/* ---------------- Каркас экрана ----------------
+   Шапка и нижняя панель живут вне прокручиваемой области,
+   поэтому полоса прокрутки идёт только между ними. */
+
+export const SlotsContext = createContext<{ header: HTMLElement | null; footer: HTMLElement | null }>({
+  header: null,
+  footer: null,
+})
+
+function InSlot({ slot, children }: { slot: 'header' | 'footer'; children: ReactNode }) {
+  const slots = useContext(SlotsContext)
+  const el = slots[slot]
+  return el ? createPortal(children, el) : <>{children}</>
+}
+
+/** Нижняя панель с кнопкой (Сохранить / Готово / Завершить) */
+export function BottomBar({ children }: { children: ReactNode }) {
+  return (
+    <InSlot slot="footer">
+      <div className="safe-bottom border-t border-line bg-bg">{children}</div>
+    </InSlot>
+  )
+}
+
 /* ---------------- Шапка экрана ---------------- */
 
 export function TopBar({
@@ -30,7 +56,8 @@ export function TopBar({
 }) {
   const nav = useNavigate()
   return (
-    <header className="safe-top sticky top-0 z-30 border-b border-line bg-bg">
+    <InSlot slot="header">
+    <header className="safe-top border-b border-line bg-bg">
       <div className="flex h-14 items-center gap-1 px-2">
         {back ? (
           <button
@@ -50,6 +77,7 @@ export function TopBar({
         <div className="flex items-center gap-1">{right}</div>
       </div>
     </header>
+    </InSlot>
   )
 }
 

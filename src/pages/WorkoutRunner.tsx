@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, exKey, rememberExercise, type SetEntry, type Workout, type WorkoutExercise } from '../db'
-import { ActionSheet, Button, Card, IconButton, NumField, Sheet, TextArea, TopBar, confirmAsk, cx, toast } from '../components/ui'
+import { ActionSheet, Button, Card, IconButton, NumField, Sheet, TextArea, TopBar, confirmAsk, cx, toast, BottomBar } from '../components/ui'
 import { IconCheck, IconFlag, IconMore, IconPlus, IconSearch, IconTrash } from '../components/icons'
 import { daysAgo, fmtDate, fmtDateLong, fullName, weekday } from '../lib/format'
 import { findPrevious, setsLine } from '../lib/summary'
@@ -101,7 +101,7 @@ export default function WorkoutRunner() {
   const menuEx = w.exercises.find((e) => e.id === exMenu)
 
   return (
-    <div className="pb-28">
+    <div className="pb-24">
       <TopBar
         title={w.dayName || 'Свободная тренировка'}
         subtitle={
@@ -264,13 +264,13 @@ export default function WorkoutRunner() {
         </div>
       </div>
 
-      <div className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg">
+      <BottomBar>
         <div className="mx-auto max-w-xl px-4 py-3">
           <Button variant="primary" size="lg" block onClick={finish}>
             <IconCheck size={20} /> {isDone ? 'Сохранить' : `Завершить тренировку${totalSets ? ` · ${doneSets}/${totalSets}` : ''}`}
           </Button>
         </div>
-      </div>
+      </BottomBar>
 
       {/* Меню тренировки */}
       <ActionSheet

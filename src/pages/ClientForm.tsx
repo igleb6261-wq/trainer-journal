@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { db, stamp, type Client, type Format, type Sex } from '../db'
-import { Button, Field, NumField, Segmented, Select, TextArea, TopBar, toast } from '../components/ui'
+import { Button, Field, NumField, Segmented, Select, TextArea, TopBar, toast, BottomBar } from '../components/ui'
 import { todayISO } from '../lib/format'
 
 const empty = (): Omit<Client, 'id' | 'createdAt' | 'updatedAt'> => ({
@@ -63,7 +63,7 @@ export default function ClientForm() {
   if (!loaded) return <TopBar title="..." back />
 
   return (
-    <div className="pb-28">
+    <div className="pb-24">
       <TopBar title={id ? 'Редактировать' : 'Новый клиент'} back />
       <div className="space-y-3 px-4 pt-4">
         <Field label="Фамилия" value={f.lastName} onChange={(e) => set('lastName', e.target.value)} autoCapitalize="words" />
@@ -124,13 +124,13 @@ export default function ClientForm() {
         <TextArea label="Заметки о клиенте" value={f.notes} onChange={(e) => set('notes', e.target.value)} minRows={3} />
       </div>
 
-      <div className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg">
+      <BottomBar>
         <div className="mx-auto max-w-xl px-4 py-3">
           <Button variant="primary" size="lg" block onClick={save}>
             {id ? 'Сохранить' : 'Создать клиента'}
           </Button>
         </div>
-      </div>
+      </BottomBar>
     </div>
   )
 }

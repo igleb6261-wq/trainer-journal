@@ -94,6 +94,8 @@
 
 html,
 body {
+  height: 100%;
+  overflow: hidden;
   background: var(--bg);
   color: var(--text);
   -webkit-tap-highlight-color: transparent;
@@ -151,9 +153,6 @@ input[type='date']::-webkit-date-and-time-value {
 }
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
-}
-.pb-nav {
-  padding-bottom: calc(76px + env(safe-area-inset-bottom));
 }
 
 .no-scrollbar::-webkit-scrollbar {

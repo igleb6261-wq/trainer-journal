@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, rememberExercise, uid, type PlanExercise, type Program, type ProgramDay } from '../db'
-import { ActionSheet, Button, Card, Field, IconButton, NumField, TextArea, TopBar, confirmAsk, cx } from '../components/ui'
+import { ActionSheet, Button, Card, Field, IconButton, NumField, TextArea, TopBar, confirmAsk, cx, BottomBar } from '../components/ui'
 import { IconMore, IconPlus } from '../components/icons'
 
 const newExercise = (): PlanExercise => ({
@@ -75,7 +75,7 @@ export default function ProgramEditor() {
   const menuEx = exMenu && menuExObj ? { dayId: exMenu.dayId, ex: menuExObj } : null
 
   return (
-    <div className="pb-28">
+    <div className="pb-24">
       <TopBar title="Программа" subtitle="Сохраняется автоматически" back />
       <datalist id="exercise-list">
         {(catalog ?? []).map((e) => (
@@ -188,7 +188,7 @@ export default function ProgramEditor() {
         </Button>
       </div>
 
-      <div className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg">
+      <BottomBar>
         <div className="mx-auto max-w-xl px-4 py-3">
           <Button
             variant="primary"
@@ -204,7 +204,7 @@ export default function ProgramEditor() {
             Готово
           </Button>
         </div>
-      </div>
+      </BottomBar>
 
       <ActionSheet
         open={!!menuEx}

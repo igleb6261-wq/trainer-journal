@@ -1,7 +1,8 @@
 import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom'
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { IconJournal, IconSettings, IconUsers } from './components/icons'
-import { ToastHost, cx } from './components/ui'
+import { SlotsContext, ToastHost, cx } from './components/ui'
 import ClientsList from './pages/ClientsList'
 import ClientForm from './pages/ClientForm'
 import ClientPage from './pages/ClientPage'
@@ -15,7 +16,7 @@ import { QuestionsEditor, MetricsEditor, ExercisesEditor } from './pages/Setting
 function ScrollTop() {
   const { pathname } = useLocation()
   useEffect(() => {
-    window.scrollTo(0, 0)
+    document.getElementById('scroller')?.scrollTo(0, 0)
   }, [pathname])
   return null
 }
@@ -33,20 +34,22 @@ function BottomNav() {
       {label}
     </NavLink>
   )
-  return (
-    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg">
-      <div className="mx-auto flex h-[60px] max-w-xl">
+  const footer = document.getElementById('footer-slot')
+  const navEl = (
+    <nav className="safe-bottom border-t border-line bg-bg">
+      <div className="flex h-[60px]">
         {item('/', 'Клиенты', <IconUsers />, true)}
         {item('/journal', 'Журнал', <IconJournal />)}
         {item('/settings', 'Настройки', <IconSettings />)}
       </div>
     </nav>
   )
+  return footer ? createPortal(navEl, footer) : navEl
 }
 
 const withNav = (el: ReactNode) => (
   <>
-    <div className="pb-nav">{el}</div>
+    <div className="pb-24">{el}</div>
     <BottomNav />
   </>
 )
@@ -56,7 +59,7 @@ export default function App() {
     <HashRouter>
       <ScrollTop />
       <ToastHost />
-      <div className="mx-auto min-h-dvh max-w-xl">
+      <Shell>
         <Routes>
           <Route path="/" element={withNav(<ClientsList />)} />
           <Route path="/journal" element={withNav(<Journal />)} />
@@ -72,7 +75,24 @@ export default function App() {
           <Route path="/client/:id/progress" element={<ExerciseProgress />} />
           <Route path="*" element={withNav(<ClientsList />)} />
         </Routes>
-      </div>
+      </Shell>
     </HashRouter>
+  )
+}
+
+/** Каркас: шапка сверху, прокручиваемое содержимое, нижняя панель снизу */
+function Shell({ children }: { children: ReactNode }) {
+  const [header, setHeader] = useState<HTMLDivElement | null>(null)
+  const [footer, setFooter] = useState<HTMLDivElement | null>(null)
+  return (
+    <SlotsContext.Provider value={{ header, footer }}>
+      <div className="mx-auto flex h-dvh max-w-xl flex-col">
+        <div ref={setHeader} className="relative z-30 shrink-0" />
+        <main id="scroller" className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          {header && footer && children}
+        </main>
+        <div ref={setFooter} id="footer-slot" className="relative z-30 shrink-0" />
+      </div>
+    </SlotsContext.Provider>
   )
 }
