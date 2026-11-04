@@ -9,7 +9,7 @@ import { daysAgo, plural } from '../lib/format'
 import { getTheme, setTheme, type Theme } from '../lib/theme'
 import { deleteDemo, loadDemo } from '../lib/demo'
 import { checkForUpdate, hardReload } from '../lib/update'
-import { clearVideos, importVideoPack, videoStats } from '../lib/videoPack'
+import { clearVideos, downloadVideoPack, importVideoPack, videoStats } from '../lib/videoPack'
 
 export default function Settings() {
   const nav = useNavigate()
@@ -214,14 +214,16 @@ function VideoPackSection() {
   const ref = useRef<HTMLInputElement>(null)
   const [progress, setProgress] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [password, setPassword] = useState('')
   const stats = useLiveQuery(() => videoStats(), [])
   const mb = stats ? (stats.bytes / 1024 / 1024).toFixed(0) : '0'
 
-  const onFile = async (f: File) => {
-    setProgress('Читаю файл…')
+  const run = async (job: () => Promise<{ videos: number }>) => {
+    setError(null)
     try {
-      const r = await importVideoPack(f, (d, t) => setProgress(`Загружаю видео: ${d} из ${t}`))
+      const r = await job()
       toast(`Загружено видео: ${r.videos}`)
+      setPassword('')
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -233,30 +235,53 @@ function VideoPackSection() {
     <Section title="Видео техники">
       <Card className="p-4">
         <div className="text-sm text-muted">
-          Видео хранятся только в этом телефоне и работают без интернета. Их нет на сайте приложения и в резервной
-          копии — файл с видео храни отдельно.
+          Видео хранятся в этом телефоне и работают без интернета. На сайте они лежат только в зашифрованном виде —
+          открыть их можно лишь с твоим паролем.
         </div>
         <div className="mt-3 text-sm">
           В телефоне: <b>{stats?.count ?? 0}</b> видео{stats && stats.count > 0 ? ` · ${mb} МБ` : ''}
         </div>
         {error && <div className="mt-3 rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">{error}</div>}
+        <input
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Пароль для видео"
+          autoCapitalize="off"
+          autoCorrect="off"
+          autoComplete="off"
+          spellCheck={false}
+          className="mt-3 w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-[16px] outline-none focus:border-accent-text"
+        />
         <Button
           variant="primary"
           block
-          className="mt-3"
-          disabled={!!progress}
+          className="mt-2"
+          disabled={!!progress || !password.trim()}
           onClick={() => {
-            setError(null)
-            ref.current?.click()
+            setProgress('Скачиваю видео…')
+            run(() => downloadVideoPack(password, (t) => setProgress(t)))
           }}
         >
-          <IconUpload size={20} /> {progress ?? 'Загрузить файл с видео'}
+          <IconDownload size={20} /> {progress ?? 'Скачать видео в телефон'}
         </Button>
-        {stats && stats.count > 0 && !progress && (
+        {!progress && (
           <Button
             variant="ghost"
             block
             className="mt-1"
+            onClick={() => {
+              setError(null)
+              ref.current?.click()
+            }}
+          >
+            <IconUpload size={18} /> Загрузить из файла
+          </Button>
+        )}
+        {stats && stats.count > 0 && !progress && (
+          <Button
+            variant="ghost"
+            block
+            className="mt-1 text-danger"
             onClick={async () => {
               if (!confirmAsk('Удалить все видео техники из телефона? Упражнения останутся.')) return
               await clearVideos()
@@ -273,7 +298,10 @@ function VideoPackSection() {
           onChange={(e) => {
             const f = e.target.files?.[0]
             e.target.value = ''
-            if (f) onFile(f)
+            if (f) {
+              setProgress('Читаю файл…')
+              run(() => importVideoPack(f, (d, t) => setProgress(`Загружаю видео: ${d} из ${t}`)))
+            }
           }}
         />
       </Card>

@@ -25,17 +25,80 @@ export async function importVideoPack(
     new Error(`Не тот файл: «${file.name}», ${mb} МБ (${why}). Нужен «Видео для приложения», около 40 МБ`)
   if (file.size < 1024) throw wrong('файл пустой или не скачан до конца')
   const buf = await file.arrayBuffer()
+  return importPackBuffer(buf, onProgress, wrong)
+}
+
+/** Скачивает зашифрованный пакет видео с сайта и расшифровывает паролем */
+export async function downloadVideoPack(
+  password: string,
+  onProgress?: (text: string) => void,
+): Promise<{ videos: number; exercises: number }> {
+  onProgress?.('Скачиваю видео…')
+  const res = await fetch(`${import.meta.env.BASE_URL}videos.bin`, { cache: 'no-store' })
+  if (!res.ok || !res.body) throw new Error('Не удалось скачать видео. Проверь интернет и попробуй ещё раз')
+  const total = Number(res.headers.get('content-length')) || 0
+  const reader = res.body.getReader()
+  const parts: Uint8Array[] = []
+  let got = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    parts.push(value)
+    got += value.length
+    onProgress?.(total ? `Скачиваю видео: ${Math.round((got / total) * 100)}%` : `Скачиваю видео: ${(got / 1048576).toFixed(0)} МБ`)
+  }
+  const all = new Uint8Array(got)
+  let o = 0
+  for (const p of parts) {
+    all.set(p, o)
+    o += p.length
+  }
+  parts.length = 0
+  const MAG = 'TJENC1\n'
+  if (new TextDecoder().decode(all.subarray(0, MAG.length)) !== MAG) throw new Error('Файл с видео на сайте повреждён')
+  const salt = all.subarray(MAG.length, MAG.length + 16)
+  const iv = all.subarray(MAG.length + 16, MAG.length + 28)
+  const data = all.subarray(MAG.length + 28)
+  onProgress?.('Проверяю пароль…')
+  const baseKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(password.trim()), 'PBKDF2', false, ['deriveKey'])
+  const key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt'],
+  )
+  let plain: ArrayBuffer
+  try {
+    plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data)
+  } catch {
+    throw new Error('Неверный пароль')
+  }
+  return importPackBuffer(plain, (d, t) => onProgress?.(`Сохраняю видео: ${d} из ${t}`), (why) => new Error(why))
+}
+
+async function importPackBuffer(
+  buf: ArrayBuffer,
+  onProgress: ((done: number, total: number) => void) | undefined,
+  wrong: (why: string) => Error,
+): Promise<{ videos: number; exercises: number }> {
   // ищем подпись в начале файла (на случай, если перед ней что-то добавилось)
   const head = new Uint8Array(buf, 0, Math.min(4096, buf.byteLength))
   const sig = new TextEncoder().encode(MAGIC)
   let at = -1
   for (let i = 0; i + sig.length <= head.length && at < 0; i++) {
     let ok = true
-    for (let j = 0; j < sig.length; j++) if (head[i + j] !== sig[j]) { ok = false; break }
+    for (let j = 0; j < sig.length; j++)
+      if (head[i + j] !== sig[j]) {
+        ok = false
+        break
+      }
     if (ok) at = i
   }
   if (at < 0) {
-    const first = Array.from(head.slice(0, 4)).map((b) => b.toString(16).padStart(2, '0')).join(' ')
+    const first = Array.from(head.slice(0, 4))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join(' ')
     throw wrong(first === '50 4b 03 04' ? 'это zip-архив' : `начало: ${first}`)
   }
   const view = new DataView(buf)
