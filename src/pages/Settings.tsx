@@ -9,6 +9,7 @@ import { daysAgo, plural } from '../lib/format'
 import { getTheme, setTheme, type Theme } from '../lib/theme'
 import { deleteDemo, loadDemo } from '../lib/demo'
 import { checkForUpdate, hardReload } from '../lib/update'
+import { clearVideos, importVideoPack, videoStats } from '../lib/videoPack'
 
 export default function Settings() {
   const nav = useNavigate()
@@ -167,6 +168,8 @@ export default function Settings() {
           </Card>
         </Section>
 
+        <VideoPackSection />
+
         <Section title="Обновление приложения">
           <Card className="p-4">
             <div className="text-sm text-muted">
@@ -202,5 +205,67 @@ export default function Settings() {
         <div className="mt-8 text-center text-xs text-muted">Журнал тренера · версия {__APP_VERSION__}</div>
       </div>
     </div>
+  )
+}
+
+/* ---------------- Видео техники в памяти телефона ---------------- */
+
+function VideoPackSection() {
+  const ref = useRef<HTMLInputElement>(null)
+  const [progress, setProgress] = useState<string | null>(null)
+  const stats = useLiveQuery(() => videoStats(), [])
+  const mb = stats ? (stats.bytes / 1024 / 1024).toFixed(0) : '0'
+
+  const onFile = async (f: File) => {
+    setProgress('Читаю файл…')
+    try {
+      const r = await importVideoPack(f, (d, t) => setProgress(`Загружаю видео: ${d} из ${t}`))
+      toast(`Загружено видео: ${r.videos}`)
+    } catch (e) {
+      toast((e as Error).message)
+    } finally {
+      setProgress(null)
+    }
+  }
+
+  return (
+    <Section title="Видео техники">
+      <Card className="p-4">
+        <div className="text-sm text-muted">
+          Видео хранятся только в этом телефоне и работают без интернета. Их нет на сайте приложения и в резервной
+          копии — файл с видео храни отдельно.
+        </div>
+        <div className="mt-3 text-sm">
+          В телефоне: <b>{stats?.count ?? 0}</b> видео{stats && stats.count > 0 ? ` · ${mb} МБ` : ''}
+        </div>
+        <Button variant="primary" block className="mt-3" disabled={!!progress} onClick={() => ref.current?.click()}>
+          <IconUpload size={20} /> {progress ?? 'Загрузить файл с видео'}
+        </Button>
+        {stats && stats.count > 0 && !progress && (
+          <Button
+            variant="ghost"
+            block
+            className="mt-1"
+            onClick={async () => {
+              if (!confirmAsk('Удалить все видео техники из телефона? Упражнения останутся.')) return
+              await clearVideos()
+              toast('Видео удалены')
+            }}
+          >
+            Удалить видео из телефона
+          </Button>
+        )}
+        <input
+          ref={ref}
+          type="file"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            e.target.value = ''
+            if (f) onFile(f)
+          }}
+        />
+      </Card>
+    </Section>
   )
 }

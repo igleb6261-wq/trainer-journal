@@ -117,6 +117,11 @@ export interface ExerciseRef extends Base {
   videos?: string[] // видео техники (id файла на Google Диске)
 }
 
+export interface VideoBlob {
+  id: string
+  blob: Blob
+}
+
 export interface Setting {
   key: string
   value: unknown
@@ -142,6 +147,7 @@ class TrainerDB extends Dexie {
   photos!: EntityTable<Photo, 'id'>
   exercises!: EntityTable<ExerciseRef, 'id'>
   settings!: EntityTable<Setting, 'key'>
+  videos!: EntityTable<VideoBlob, 'id'>
 
   constructor() {
     super('trainer-journal')
@@ -154,6 +160,8 @@ class TrainerDB extends Dexie {
       exercises: 'id, &key, name',
       settings: 'key',
     })
+    // v2: видео техники, хранятся только в телефоне
+    this.version(2).stores({ videos: 'id' })
   }
 }
 

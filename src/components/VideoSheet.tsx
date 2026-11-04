@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, exKey } from '../db'
 import { videoEmbedUrl, videoOpenUrl } from '../lib/library'
 import { Sheet, cx } from './ui'
+import { useBlobUrl } from './media'
 
 /** Видео техники упражнения во всплывающей шторке */
 export function VideoSheet({ name, open, onClose }: { name: string; open: boolean; onClose: () => void }) {
@@ -34,24 +35,7 @@ export function VideoSheet({ name, open, onClose }: { name: string; open: boolea
               ))}
             </div>
           )}
-          <div className="overflow-hidden rounded-2xl bg-black" style={{ height: '62dvh' }}>
-            <iframe
-              key={id}
-              src={videoEmbedUrl(id)}
-              title={name}
-              className="h-full w-full border-0"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-          <a
-            href={videoOpenUrl(id)}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-3 block text-center text-[15px] text-accent-text"
-          >
-            Открыть видео отдельно
-          </a>
+          <VideoPlayer id={id} name={name} />
         </>
       )}
     </Sheet>
@@ -96,6 +80,37 @@ export function VideoButton({ name, className, videos: known }: { name: string; 
         Техника
       </button>
       <VideoSheet name={name} open={open} onClose={() => setOpen(false)} />
+    </>
+  )
+}
+
+/** Видео из памяти телефона; если его там нет — с Google Диска */
+function VideoPlayer({ id, name }: { id: string; name: string }) {
+  const local = useLiveQuery(async () => (await db.videos.get(id)) ?? null, [id])
+  const url = useBlobUrl(local?.blob)
+  if (local === undefined) return <div className="rounded-2xl bg-black" style={{ height: '62dvh' }} />
+  if (url)
+    return (
+      <div className="flex items-center justify-center overflow-hidden rounded-2xl bg-white" style={{ maxHeight: '62dvh' }}>
+        <video key={id} src={url} className="max-h-[62dvh] w-full object-contain" autoPlay loop muted playsInline controls />
+      </div>
+    )
+  return (
+    <>
+      <div className="overflow-hidden rounded-2xl bg-black" style={{ height: '62dvh' }}>
+        <iframe
+          key={id}
+          src={videoEmbedUrl(id)}
+          title={name}
+          className="h-full w-full border-0"
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+      <a href={videoOpenUrl(id)} target="_blank" rel="noreferrer" className="mt-3 block text-center text-[15px] text-accent-text">
+        Открыть видео отдельно
+      </a>
+      <div className="mt-1 text-center text-xs text-muted">Это видео не загружено в телефон и открывается из интернета</div>
     </>
   )
 }
