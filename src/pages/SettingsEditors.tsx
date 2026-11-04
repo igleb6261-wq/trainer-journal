@@ -4,6 +4,7 @@ import { db, DEFAULT_METRICS, DEFAULT_QUESTIONS, exKey, setSetting, stamp, uid, 
 import { Button, Card, IconButton, TopBar, confirmAsk, cx, toast } from '../components/ui'
 import { IconArrowDown, IconArrowUp, IconPlus, IconSearch, IconTrash } from '../components/icons'
 import { useMetrics, useQuestions } from '../lib/hooks'
+import { VideoButton } from '../components/VideoSheet'
 import { BASIC_TAB, GROUP_NAMES, LIB_INDEX, MY_GROUP, groupOf, matchesQuery } from '../lib/library'
 
 function move<T>(arr: T[], i: number, d: number): T[] {
@@ -279,6 +280,7 @@ export function ExercisesEditor() {
                     </option>
                   ))}
                 </select>
+                {!!e.videos?.length && <VideoButton name={e.name} videos={e.videos} />}
                 <button
                   className={cx(
                     'h-8 shrink-0 rounded-lg px-2 text-[12px] font-medium',

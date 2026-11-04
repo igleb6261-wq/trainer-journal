@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, exKey, type ExerciseRef } from '../db'
 import { BASIC_TAB, GROUP_NAMES, LIB_INDEX, basicOf, groupOf, matchesQuery } from '../lib/library'
 import { Button, Sheet, cx } from './ui'
+import { VideoSheet } from './VideoSheet'
 import { IconCheck, IconPlus, IconSearch } from './icons'
 
 /**
@@ -27,6 +28,7 @@ export function ExercisePicker({
   const [q, setQ] = useState('')
   const [group, setGroup] = useState<string | null>(null)
   const [picked, setPicked] = useState<string[]>([])
+  const [video, setVideo] = useState<string | null>(null)
   const catalog = useLiveQuery(() => db.exercises.toArray(), [])
 
   useEffect(() => {
@@ -65,9 +67,11 @@ export function ExercisePicker({
   const Item = ({ e, showGroup }: { e: ExerciseRef; showGroup?: boolean }) => {
     const on = picked.includes(e.name)
     return (
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         className={cx(
-          'flex w-full items-center gap-3 border-b border-line px-4 py-3 text-left last:border-b-0 active:bg-surface-2',
+          'flex w-full cursor-pointer items-center gap-3 border-b border-line px-4 py-3 text-left last:border-b-0 active:bg-surface-2',
           on && 'bg-accent-soft',
         )}
         onClick={() => choose(e.name)}
@@ -76,6 +80,21 @@ export function ExercisePicker({
           <div className="text-[16px] leading-snug">{e.name}</div>
           {showGroup && <div className="text-[12px] text-muted">{groupOf(e)}</div>}
         </div>
+        {!!e.videos?.length && (
+          <button
+            type="button"
+            aria-label="Видео техники"
+            onClick={(ev) => {
+              ev.stopPropagation()
+              setVideo(e.name)
+            }}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-text active:opacity-70"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M7 4l14 8-14 8z" />
+            </svg>
+          </button>
+        )}
         {multi && (
           <span
             className={cx(
@@ -86,7 +105,7 @@ export function ExercisePicker({
             <IconCheck size={16} />
           </span>
         )}
-      </button>
+      </div>
     )
   }
 
@@ -176,6 +195,7 @@ export function ExercisePicker({
           </div>
         ))
       )}
+      <VideoSheet name={video ?? ''} open={!!video} onClose={() => setVideo(null)} />
     </Sheet>
   )
 }

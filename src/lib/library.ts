@@ -1,4 +1,5 @@
 import { db, exKey, getSetting, setSetting, stamp, type ExerciseRef } from '../db'
+import { VIDEO_LIBRARY } from './videoLibrary'
 
 /* ============================================================
    Библиотека упражнений по группам мышц.
@@ -192,12 +193,12 @@ export const EXERCISE_GROUPS: { group: string; items: string[] }[] = [
   },
 ]
 
-export const GROUP_NAMES = [...EXERCISE_GROUPS.map((g) => g.group), MY_GROUP]
+export const GROUP_NAMES = [...EXERCISE_GROUPS.map((g) => g.group), 'Растяжка', MY_GROUP]
 
 /** Порядок упражнения внутри своей группы (базовые — первыми) */
 export const LIB_INDEX = new Map(EXERCISE_GROUPS.flatMap((g) => g.items.map((n, i) => [exKey(n), i] as [string, number])))
 
-const LIBRARY_VERSION = 2
+const LIBRARY_VERSION = 3
 
 /** Добавляет библиотеку в справочник (один раз; повторно — только новые упражнения новой версии) */
 export async function seedLibrary() {
@@ -217,6 +218,21 @@ export async function seedLibrary() {
         toAdd.push(e)
         byKey.set(key, e)
       }
+    }
+  }
+  // v3: упражнения из таблицы тренера с видео техники
+  for (const [name, group, videos] of VIDEO_LIBRARY) {
+    const key = exKey(name)
+    const ex = byKey.get(key)
+    if (ex) {
+      const merged = [...new Set([...(ex.videos ?? []), ...videos])]
+      ex.videos = merged
+      if (!ex.group) ex.group = group
+      if (!toAdd.includes(ex)) await db.exercises.update(ex.id, { videos: merged, group: ex.group })
+    } else {
+      const e: ExerciseRef = { ...stamp(), name, key, group, videos }
+      toAdd.push(e)
+      byKey.set(key, e)
     }
   }
   await db.exercises.bulkAdd(toAdd)
@@ -254,3 +270,7 @@ export function matchesQuery(key: string, query: string): boolean {
       return words.some((w) => w.startsWith(stem)) || key.includes(t)
     })
 }
+
+/** Ссылки на видео (сейчас — Google Диск; позже можно заменить на свои файлы) */
+export const videoEmbedUrl = (id: string) => `https://drive.google.com/file/d/${id}/preview`
+export const videoOpenUrl = (id: string) => `https://drive.google.com/file/d/${id}/view`

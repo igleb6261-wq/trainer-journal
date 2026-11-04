@@ -8,6 +8,7 @@ import { daysAgo, fmtDate, fmtDateLong, fullName, weekday } from '../lib/format'
 import { findPrevious, setsLine } from '../lib/summary'
 import { buildExercise, emptySet } from '../lib/workout'
 import { ExercisePicker } from '../components/ExercisePicker'
+import { VideoButton } from '../components/VideoSheet'
 
 const sortDesc = (a: Workout, b: Workout) => (a.date === b.date ? b.createdAt - a.createdAt : b.date.localeCompare(a.date))
 
@@ -161,6 +162,7 @@ export default function WorkoutRunner() {
                       {allDone && <IconCheck size={16} className="shrink-0 text-up" />}
                     </div>
                     {e.target && <div className="mt-0.5 text-[13px] text-muted tabular">План: {e.target}</div>}
+                    <VideoButton name={e.name} className="mt-1.5 w-fit" />
                     {e.planNote && <div className="mt-0.5 text-[13px] italic text-muted">{e.planNote}</div>}
                   </div>
                   <IconButton className="-mr-2 -mt-1 h-9 w-9 text-muted" onClick={() => setExMenu(e.id)}>

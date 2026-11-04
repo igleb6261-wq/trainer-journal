@@ -114,6 +114,7 @@ export interface ExerciseRef extends Base {
   key: string // нормализованное имя (для поиска дублей)
   group?: string // группа мышц (из библиотеки или своя)
   basic?: boolean // показывать во вкладке «Базовые»
+  videos?: string[] // видео техники (id файла на Google Диске)
 }
 
 export interface Setting {

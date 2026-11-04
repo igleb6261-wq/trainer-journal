@@ -5,6 +5,7 @@ import { db, exKey, rememberExercise, uid, type PlanExercise, type Program, type
 import { ActionSheet, Button, Card, Field, IconButton, NumField, TextArea, TopBar, confirmAsk, cx, BottomBar } from '../components/ui'
 import { IconMore, IconPlus } from '../components/icons'
 import { ExercisePicker } from '../components/ExercisePicker'
+import { VideoButton } from '../components/VideoSheet'
 
 const newExercise = (): PlanExercise => ({
   id: uid(),
@@ -124,6 +125,7 @@ export default function ProgramEditor() {
                     onBlur={(ev) => rememberExercise(ev.target.value)}
                     className="min-w-0 flex-1 [&_textarea]:border-transparent [&_textarea]:bg-transparent [&_textarea]:px-1.5 [&_textarea]:py-2 [&_textarea]:font-medium [&_textarea]:leading-snug"
                   />
+                  <VideoButton name={e.name} className="mt-1" />
                   <IconButton className="h-9 w-9 text-muted" onClick={() => setExMenu({ dayId: d.id, exId: e.id })}>
                     <IconMore size={20} />
                   </IconButton>
