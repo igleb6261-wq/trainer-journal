@@ -20,14 +20,29 @@ export async function importVideoPack(
   file: File,
   onProgress?: (done: number, total: number) => void,
 ): Promise<{ videos: number; exercises: number }> {
+  const mb = (file.size / 1024 / 1024).toFixed(1).replace('.', ',')
+  const wrong = (why: string) =>
+    new Error(`Не тот файл: «${file.name}», ${mb} МБ (${why}). Нужен «Видео для приложения», около 40 МБ`)
+  if (file.size < 1024) throw wrong('файл пустой или не скачан до конца')
   const buf = await file.arrayBuffer()
-  const magic = new TextDecoder().decode(new Uint8Array(buf, 0, MAGIC.length))
-  if (magic !== MAGIC) throw new Error('Это не файл с видео упражнений')
+  // ищем подпись в начале файла (на случай, если перед ней что-то добавилось)
+  const head = new Uint8Array(buf, 0, Math.min(4096, buf.byteLength))
+  const sig = new TextEncoder().encode(MAGIC)
+  let at = -1
+  for (let i = 0; i + sig.length <= head.length && at < 0; i++) {
+    let ok = true
+    for (let j = 0; j < sig.length; j++) if (head[i + j] !== sig[j]) { ok = false; break }
+    if (ok) at = i
+  }
+  if (at < 0) {
+    const first = Array.from(head.slice(0, 4)).map((b) => b.toString(16).padStart(2, '0')).join(' ')
+    throw wrong(first === '50 4b 03 04' ? 'это zip-архив' : `начало: ${first}`)
+  }
   const view = new DataView(buf)
-  const hlen = view.getUint32(MAGIC.length, true)
-  const hstart = MAGIC.length + 4
+  const hlen = view.getUint32(at + MAGIC.length, true)
+  const hstart = at + MAGIC.length + 4
   const header = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, hstart, hlen))) as Header
-  if (header.format !== 'trainer-journal-videos') throw new Error('Это не файл с видео упражнений')
+  if (header.format !== 'trainer-journal-videos') throw wrong('неизвестный формат')
   const base = hstart + hlen
 
   // 1) видео — пачками, чтобы не держать всё сразу

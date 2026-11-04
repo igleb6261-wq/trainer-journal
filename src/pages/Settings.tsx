@@ -213,6 +213,7 @@ export default function Settings() {
 function VideoPackSection() {
   const ref = useRef<HTMLInputElement>(null)
   const [progress, setProgress] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const stats = useLiveQuery(() => videoStats(), [])
   const mb = stats ? (stats.bytes / 1024 / 1024).toFixed(0) : '0'
 
@@ -222,7 +223,7 @@ function VideoPackSection() {
       const r = await importVideoPack(f, (d, t) => setProgress(`Загружаю видео: ${d} из ${t}`))
       toast(`Загружено видео: ${r.videos}`)
     } catch (e) {
-      toast((e as Error).message)
+      setError((e as Error).message)
     } finally {
       setProgress(null)
     }
@@ -238,7 +239,17 @@ function VideoPackSection() {
         <div className="mt-3 text-sm">
           В телефоне: <b>{stats?.count ?? 0}</b> видео{stats && stats.count > 0 ? ` · ${mb} МБ` : ''}
         </div>
-        <Button variant="primary" block className="mt-3" disabled={!!progress} onClick={() => ref.current?.click()}>
+        {error && <div className="mt-3 rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">{error}</div>}
+        <Button
+          variant="primary"
+          block
+          className="mt-3"
+          disabled={!!progress}
+          onClick={() => {
+            setError(null)
+            ref.current?.click()
+          }}
+        >
           <IconUpload size={20} /> {progress ?? 'Загрузить файл с видео'}
         </Button>
         {stats && stats.count > 0 && !progress && (
