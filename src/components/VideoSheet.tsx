@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, exKey } from '../db'
+import { db, exKey, stamp } from '../db'
 import { videoEmbedUrl, videoOpenUrl } from '../lib/library'
-import { Button, Sheet, confirmAsk, cx, toast } from './ui'
+import { builtinTechnique, parseTechnique, techniqueToText } from '../lib/techniqueText'
+import { Button, Card, Sheet, TextArea, confirmAsk, cx, toast } from './ui'
 import { IconCamera } from './icons'
 import { deleteOwnVideo, fmtMb, isOwn, saveOwnVideo } from '../lib/ownVideo'
 import { useBlobUrl } from './media'
@@ -72,11 +73,14 @@ export function VideoSheet({ name, open, onClose }: { name: string; open: boolea
           Из галереи
         </Button>
       </div>
+
+      <TechniqueBlock name={name} />
+
       {id && isOwn(id) && (
         <Button
           variant="ghost"
           block
-          className="mt-1 text-danger"
+          className="mt-3 text-danger"
           onClick={async () => {
             if (!confirmAsk('Удалить твоё видео для этого упражнения?')) return
             await deleteOwnVideo(name, id)
@@ -87,7 +91,7 @@ export function VideoSheet({ name, open, onClose }: { name: string; open: boolea
           Удалить моё видео
         </Button>
       )}
-      <div className="mt-2 px-1 text-center text-xs text-muted">
+      <div className="mt-3 px-1 text-center text-xs text-muted">
         Свои видео хранятся только в телефоне и попадают в резервную копию. Снимай короткие ролики, 5–15 секунд.
       </div>
       <input
@@ -171,16 +175,16 @@ export function VideoButton({ name, className, videos: known }: { name: string; 
 function VideoPlayer({ id, name }: { id: string; name: string }) {
   const local = useLiveQuery(async () => (await db.videos.get(id)) ?? null, [id])
   const url = useBlobUrl(local?.blob)
-  if (local === undefined) return <div className="rounded-2xl bg-black" style={{ height: '62dvh' }} />
+  if (local === undefined) return <div className="rounded-2xl bg-black" style={{ height: '50dvh' }} />
   if (url)
     return (
-      <div className="flex items-center justify-center overflow-hidden rounded-2xl bg-white" style={{ maxHeight: '62dvh' }}>
-        <video key={id} src={url} className="max-h-[62dvh] w-full object-contain" autoPlay loop muted playsInline controls />
+      <div className="flex items-center justify-center overflow-hidden rounded-2xl bg-white" style={{ maxHeight: '50dvh' }}>
+        <video key={id} src={url} className="max-h-[50dvh] w-full object-contain" autoPlay loop muted playsInline controls />
       </div>
     )
   return (
     <>
-      <div className="overflow-hidden rounded-2xl bg-black" style={{ height: '62dvh' }}>
+      <div className="overflow-hidden rounded-2xl bg-black" style={{ height: '50dvh' }}>
         <iframe
           key={id}
           src={videoEmbedUrl(id)}
@@ -195,5 +199,163 @@ function VideoPlayer({ id, name }: { id: string; name: string }) {
       </a>
       <div className="mt-1 text-center text-xs text-muted">Это видео не загружено в телефон и открывается из интернета</div>
     </>
+  )
+}
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+/** Подпись раздела внутри описания техники */
+function Label({ children, tone }: { children: ReactNode; tone?: 'up' | 'danger' }) {
+  return (
+    <div
+      className={cx(
+        'mb-1 text-[12px] font-semibold uppercase tracking-wide',
+        tone === 'up' ? 'text-up' : tone === 'danger' ? 'text-danger' : 'text-muted',
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
+/** Текстовое описание техники под видео: стандартное из библиотеки или своё */
+function TechniqueBlock({ name }: { name: string }) {
+  const key = exKey(name)
+  const ex = useLiveQuery(async () => (await db.exercises.where('key').equals(key).first()) ?? null, [key])
+  const [builtin, setBuiltin] = useState<string | null | undefined>(undefined)
+  const [edit, setEdit] = useState<string | null>(null)
+  useEffect(() => {
+    let alive = true
+    setBuiltin(undefined)
+    setEdit(null)
+    builtinTechnique(name)
+      .then((t) => alive && setBuiltin(t))
+      .catch(() => alive && setBuiltin(null))
+    return () => {
+      alive = false
+    }
+  }, [name])
+
+  if (ex === undefined || builtin === undefined) return <div className="mt-4 h-28 animate-pulse rounded-xl bg-surface" />
+
+  const own = ex?.technique?.trim() || ''
+  const text = own || builtin || ''
+  const t = parseTechnique(text)
+
+  const save = async (value: string) => {
+    const v = value.trim()
+    const same = builtin && v === techniqueToText(parseTechnique(builtin)).trim()
+    const technique = v && !same ? v : undefined
+    if (ex) await db.exercises.update(ex.id, { technique, updatedAt: Date.now() })
+    else if (technique) await db.exercises.add({ ...stamp(), name: name.trim(), key, technique })
+    setEdit(null)
+    toast(technique ? 'Твоё описание сохранено' : 'Описание сохранено')
+  }
+
+  return (
+    <div className="mt-5">
+      <div className="mb-1.5 flex items-center justify-between px-1">
+        <div className="text-[13px] font-semibold uppercase tracking-wide text-muted">Техника выполнения</div>
+        {edit === null && (
+          <button className="text-[15px] text-accent-text active:opacity-60" onClick={() => setEdit(text ? techniqueToText(t) : '')}>
+            {text ? 'Изменить' : 'Написать'}
+          </button>
+        )}
+      </div>
+
+      {edit !== null ? (
+        <Card className="p-3">
+          <TextArea minRows={10} value={edit} onChange={(e) => setEdit(e.target.value)} placeholder="Опиши технику своими словами" />
+          <div className="mt-1 px-1 text-xs text-muted">
+            Шаги нумеруй «1.», «2.»; советы и ошибки — строками с «-» под заголовками «Важно:» и «Частые ошибки:».
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Button onClick={() => setEdit(null)}>Отмена</Button>
+            <Button variant="primary" onClick={() => save(edit)}>
+              Сохранить
+            </Button>
+          </div>
+          {own && builtin && (
+            <Button
+              variant="ghost"
+              block
+              className="mt-1"
+              onClick={async () => {
+                if (!confirmAsk('Вернуть стандартное описание? Твой текст удалится.')) return
+                await save('')
+              }}
+            >
+              Вернуть стандартное описание
+            </Button>
+          )}
+        </Card>
+      ) : !text ? (
+        <Card className="p-4 text-sm text-muted">Описания пока нет. Нажми «Написать», чтобы добавить своё.</Card>
+      ) : (
+        <Card className="space-y-3.5 p-4 text-[15px] leading-snug">
+          {t.muscles && (
+            <div>
+              <Label>Работают</Label>
+              {cap(t.muscles)}
+            </div>
+          )}
+          {t.start && (
+            <div>
+              <Label>Исходное положение</Label>
+              {cap(t.start)}
+            </div>
+          )}
+          {t.steps.length > 0 && (
+            <div>
+              <Label>Выполнение</Label>
+              <ol className="space-y-1.5">
+                {t.steps.map((s, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="w-4 shrink-0 font-semibold tabular text-accent-text">{i + 1}.</span>
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+          {t.tips.length > 0 && (
+            <div>
+              <Label tone="up">Важно</Label>
+              <ul className="space-y-1.5">
+                {t.tips.map((s, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="shrink-0 text-up">✓</span>
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {t.errors.length > 0 && (
+            <div>
+              <Label tone="danger">Частые ошибки</Label>
+              <ul className="space-y-1.5">
+                {t.errors.map((s, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="shrink-0 text-danger">✕</span>
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {t.breath && (
+            <div>
+              <Label>Дыхание</Label>
+              {t.breath}
+            </div>
+          )}
+          {t.notes.map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
+          {own && <div className="text-xs text-muted">Это твоё описание</div>}
+        </Card>
+      )}
+    </div>
   )
 }

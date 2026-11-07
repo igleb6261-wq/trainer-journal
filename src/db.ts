@@ -124,6 +124,7 @@ export interface ExerciseRef extends Base {
   group?: string // группа мышц (из библиотеки или своя)
   basic?: boolean // показывать во вкладке «Базовые»
   videos?: string[] // видео техники (id файла на Google Диске)
+  technique?: string // своё описание техники (если пусто — стандартное из библиотеки)
 }
 
 export interface VideoBlob {
