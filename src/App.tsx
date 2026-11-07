@@ -104,7 +104,7 @@ function Shell({ children, nav }: { children: ReactNode; nav: ReactNode }) {
     <SlotsContext.Provider value={{ header, footer }}>
       <div className="relative mx-auto flex h-dvh max-w-xl flex-col">
         <div ref={setHeader} className="relative z-30 shrink-0" />
-        <main id="scroller" className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <main id="scroller" className="no-scrollbar relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {header && footer && children}
         </main>
         <div ref={setFooter} id="footer-slot" className="relative z-30 shrink-0" />
