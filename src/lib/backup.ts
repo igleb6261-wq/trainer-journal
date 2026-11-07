@@ -18,6 +18,10 @@ export async function exportBackup(): Promise<File> {
     db.exercises.toArray(),
     db.settings.toArray(),
   ])
+  // свои видео техники (видео из библиотеки в копию не входят — они загружаются отдельно)
+  const own = await db.videos.filter((v) => v.id.startsWith('own-')).toArray()
+  const ownVideos: { id: string; blob: string }[] = []
+  for (const v of own) ownVideos.push({ id: v.id, blob: await blobToDataURL(v.blob) })
   const photosJson: PhotoJSON[] = []
   for (const p of photos) {
     photosJson.push({ ...p, blob: await blobToDataURL(p.blob), thumb: await blobToDataURL(p.thumb) })
@@ -32,6 +36,7 @@ export async function exportBackup(): Promise<File> {
       workouts,
       measurements,
       photos: photosJson,
+      ownVideos,
       exercises,
       settings: settings.filter((s) => s.key !== 'lastBackupAt'),
     },
@@ -84,7 +89,7 @@ export async function importBackup(file: File): Promise<{ clients: number; worko
   }
   await db.transaction(
     'rw',
-    [db.clients, db.programs, db.workouts, db.measurements, db.photos, db.exercises, db.settings],
+    [db.clients, db.programs, db.workouts, db.measurements, db.photos, db.exercises, db.settings, db.videos],
     async () => {
       await Promise.all([
         db.clients.clear(),
@@ -102,8 +107,12 @@ export async function importBackup(file: File): Promise<{ clients: number; worko
       await db.photos.bulkPut(photos)
       await db.exercises.bulkPut(t.exercises ?? [])
       await db.settings.bulkPut(t.settings ?? [])
+      await db.videos.bulkDelete((await db.videos.toCollection().primaryKeys()).filter((k) => String(k).startsWith('own-')))
     },
   )
+  for (const v of (t.ownVideos ?? []) as { id: string; blob: string }[]) {
+    await db.videos.put({ id: v.id, blob: await dataURLToBlob(v.blob) })
+  }
   await markBackupDone()
   return {
     clients: (t.clients ?? []).length,

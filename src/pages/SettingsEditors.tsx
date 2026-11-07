@@ -198,7 +198,11 @@ export function ExercisesEditor() {
 
   return (
     <div className="pb-24">
-      <TopBar title="Библиотека упражнений" subtitle={all ? `${all.length} шт.` : undefined} back />
+      <TopBar
+        title="Библиотека упражнений"
+        subtitle={all ? `${all.length} шт. · своих видео: ${all.filter((e) => e.videos?.some((v) => v.startsWith('own-'))).length}` : undefined}
+        back
+      />
       <div className="px-4 pt-3">
         <p className="px-1 pb-3 text-sm text-muted">
           Отсюда выбираются упражнения в программе и тренировке. Можно добавить своё, переименовать, сменить группу или
@@ -280,7 +284,7 @@ export function ExercisesEditor() {
                     </option>
                   ))}
                 </select>
-                {!!e.videos?.length && <VideoButton name={e.name} videos={e.videos} />}
+                <VideoButton name={e.name} videos={e.videos ?? []} />
                 <button
                   className={cx(
                     'h-8 shrink-0 rounded-lg px-2 text-[12px] font-medium',
