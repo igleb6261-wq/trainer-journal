@@ -20,6 +20,7 @@ export default function MeasurementsTab({ client }: { client: Client }) {
   )
   const [draft, setDraft] = useState<Draft | null>(null)
   const [chartKey, setChartKey] = useState<string | null>(null)
+  const [showTable, setShowTable] = useState(false)
 
   const visible = useMemo(() => (metrics ?? []).filter((m) => !m.hidden), [metrics])
   // показываем столбцы только тех показателей, где есть хоть одно значение
@@ -81,6 +82,35 @@ export default function MeasurementsTab({ client }: { client: Client }) {
         <Empty title="Замеров пока нет" text="Вес и обхваты будут собираться в таблицу с датами и разницей." />
       ) : (
         <>
+          <Section title={`Последний замер · ${fmtDateLong(rows[0].date)}`}>
+            <div className="grid grid-cols-2 gap-2">
+              {used.map((m) => {
+                const l = lastVal(m.key)
+                const f = firstValue(m.key)
+                const idx = rows.findIndex((r) => r.values[m.key] !== undefined)
+                const p = idx >= 0 ? prevValue(idx, m.key) : undefined
+                const dPrev = l !== undefined && p !== undefined ? l - p : undefined
+                const dFirst = l !== undefined && f !== undefined && rows.length > 1 ? l - f : undefined
+                return (
+                  <Card key={m.key} className="px-3 py-2.5" onClick={() => setChartKey(m.key)}>
+                    <div className="truncate text-[12px] text-muted">{m.label}</div>
+                    <div className="text-[20px] font-semibold tabular">
+                      {l !== undefined ? num(l, 1) : '—'} <span className="text-[13px] font-normal text-muted">{m.unit}</span>
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap gap-x-2 text-[12px] tabular text-muted">
+                      {dPrev !== undefined && dPrev !== 0 && <span>{dPrev > 0 ? '↑' : '↓'} {diffText(dPrev)} к прошлому</span>}
+                      {dFirst !== undefined && dFirst !== 0 && <span className="text-accent-text">{diffText(dFirst)} с начала</span>}
+                    </div>
+                  </Card>
+                )
+              })}
+            </div>
+            <Button variant="ghost" block className="mt-1" onClick={() => setShowTable((x) => !x)}>
+              {showTable ? 'Скрыть таблицу' : `Показать таблицу всех замеров (${rows.length})`}
+            </Button>
+          </Section>
+
+          {showTable && (
           <Section title="Таблица замеров">
             <Card className="overflow-hidden">
               <div className="no-scrollbar overflow-x-auto">
@@ -139,6 +169,7 @@ export default function MeasurementsTab({ client }: { client: Client }) {
             </Card>
             <div className="px-1 pt-2 text-xs text-muted">Листай таблицу вбок. Нажми на строку, чтобы изменить замер.</div>
           </Section>
+          )}
 
           {used.length > 0 && (
             <Section title="График">

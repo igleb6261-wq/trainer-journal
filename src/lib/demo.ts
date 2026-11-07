@@ -12,6 +12,7 @@ import {
   type Workout,
   type WorkoutExercise,
 } from '../db'
+import { planTarget } from './workout'
 
 /* Демо-данные: вымышленные клиенты, чтобы потрогать приложение */
 
@@ -207,9 +208,28 @@ const SPECS: Spec[] = [
   },
 ]
 
+// расписание и оплата демо-клиентов — относительно сегодняшнего дня
+const DEMO_EXTRA = [
+  { days: [0, 3], time: '18:00', paid: 20, pinned: true },
+  { days: [0, 2], time: '07:30', paid: -2, pinned: false },
+  { days: [1, 4], time: '10:00', paid: 2, pinned: false },
+]
+
 export async function loadDemo() {
-  for (const spec of SPECS) {
-    const client: Client = { ...spec.client, ...stamp() }
+  for (const [si, spec] of SPECS.entries()) {
+    const extra = DEMO_EXTRA[si % DEMO_EXTRA.length]
+    const wd = (shift: number) => {
+      const d = new Date()
+      d.setDate(d.getDate() + shift)
+      return d.getDay()
+    }
+    const client: Client = {
+      ...spec.client,
+      ...stamp(),
+      schedule: extra.days.map((s) => ({ day: wd(s), time: extra.time })),
+      paidUntil: iso(-extra.paid),
+      pinned: extra.pinned,
+    }
     await db.clients.add(client)
 
     const program: Program = {
@@ -237,7 +257,7 @@ export async function loadDemo() {
           id: uid(),
           name: p.name,
           planNote: p.note,
-          target: '',
+          target: planTarget(p),
           comment: i === 3 && pi === 0 ? 'Колено чуть уходило внутрь на последних повторах' : '',
           sets: Array.from({ length: n }, (_, si) => set(w, reps + ((i + si) % 3 === 0 ? 1 : 0) - (si === n - 1 ? 1 : 0), Math.max(0, 2 - (si === n - 1 ? 1 : 0)))),
         }

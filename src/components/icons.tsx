@@ -121,3 +121,59 @@ export const IconGrip = make(
     <circle cx="15" cy="18" r="1" />
   </>,
 )
+export const IconClipboard = make(
+  <>
+    <rect x="8" y="2" width="8" height="4" rx="1" />
+    <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" />
+    <path d="M9 12h6M9 16h4" />
+  </>,
+)
+export const IconDumbbell = make(
+  <>
+    <path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11" />
+  </>,
+)
+export const IconClock = make(
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </>,
+)
+export const IconRuler = make(
+  <>
+    <path d="M3 17L17 3l4 4L7 21z" />
+    <path d="M7 13l2 2M10 10l2 2M13 7l2 2" />
+  </>,
+)
+export const IconPin = make(
+  <>
+    <path d="M9 4h6l-1 6 3 3v2H7v-2l3-3z" />
+    <path d="M12 15v6" />
+  </>,
+)
+export const IconCalendar = make(
+  <>
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path d="M3 10h18M8 3v4M16 3v4" />
+  </>,
+)
+export const IconAlert = make(
+  <>
+    <path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />
+    <path d="M12 9v4M12 17h.01" />
+  </>,
+)
+export const IconBulb = make(
+  <>
+    <path d="M9 18h6M10 22h4" />
+    <path d="M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z" />
+  </>,
+)
+export const IconRefresh = make(
+  <>
+    <path d="M21 12a9 9 0 01-15.5 6.2L3 16" />
+    <path d="M3 12a9 9 0 0115.5-6.2L21 8" />
+    <path d="M21 3v5h-5M3 21v-5h5" />
+  </>,
+)
+export const IconMinus = make(<path d="M5 12h14" />)

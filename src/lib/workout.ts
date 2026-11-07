@@ -88,3 +88,8 @@ export async function startWorkout(clientId: string, program: Program | null, da
   await db.workouts.add(w)
   return w.id
 }
+
+/** Завершает тренировку (например, забытую незавершённой) */
+export async function finishWorkout(w: Workout) {
+  await db.workouts.update(w.id, { status: 'done', finishedAt: w.finishedAt ?? Date.now(), updatedAt: Date.now() })
+}

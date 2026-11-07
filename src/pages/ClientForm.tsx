@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { db, stamp, type Client, type Format, type Sex } from '../db'
 import { Button, Field, NumField, Segmented, Select, TextArea, TopBar, toast, BottomBar } from '../components/ui'
 import { todayISO } from '../lib/format'
+import { ScheduleEditor } from '../components/ScheduleEditor'
 
 const empty = (): Omit<Client, 'id' | 'createdAt' | 'updatedAt'> => ({
   lastName: '',
@@ -119,7 +120,14 @@ export default function ClientForm() {
           />
         </div>
 
-        <Field label="Начало работы" type="date" className="min-w-0" value={f.startDate} onChange={(e) => set('startDate', e.target.value)} />
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Начало работы" type="date" className="min-w-0" value={f.startDate} onChange={(e) => set('startDate', e.target.value)} />
+          <Field label="Оплачено до" type="date" className="min-w-0" value={f.paidUntil ?? ''} onChange={(e) => set('paidUntil', e.target.value)} />
+        </div>
+        <div>
+          <div className="mb-1.5 px-1 text-[13px] font-medium text-muted">Дни тренировок</div>
+          <ScheduleEditor value={f.schedule ?? []} onChange={(v) => set('schedule', v)} />
+        </div>
         <TextArea label="Цель" value={f.goal} onChange={(e) => set('goal', e.target.value)} placeholder="Например: −8 кг, подтянуть ягодицы, убрать боль в спине" />
         <TextArea label="Заметки о клиенте" value={f.notes} onChange={(e) => set('notes', e.target.value)} minRows={3} />
       </div>

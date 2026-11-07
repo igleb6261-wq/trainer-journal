@@ -782,3 +782,63 @@ function IconTrashSmall() {
     </svg>
   )
 }
+
+/* ---------------- Поле с кнопками − / + ---------------- */
+
+const round2 = (x: number) => Math.round(x * 100) / 100
+
+/**
+ * Числовое поле с кнопками «−» и «+» по краям: менять значение можно без клавиатуры.
+ * step(v, dir) — размер шага для текущего значения.
+ */
+export function Stepper({
+  value,
+  onChange,
+  step,
+  integer,
+  min = 0,
+}: {
+  value: number | null
+  onChange: (v: number | null) => void
+  step: (v: number, dir: 1 | -1) => number
+  integer?: boolean
+  min?: number
+}) {
+  const btn =
+    'flex w-[26px] shrink-0 items-center justify-center self-stretch text-[20px] font-medium text-accent-text active:bg-surface active:opacity-70 select-none'
+  return (
+    <div className="flex h-11 items-stretch overflow-hidden rounded-lg bg-surface-2">
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label="Меньше"
+        className={btn}
+        onClick={() => {
+          const v = value ?? 0
+          onChange(Math.max(min, round2(v - step(v, -1))))
+        }}
+      >
+        −
+      </button>
+      <NumField
+        integer={integer}
+        value={value}
+        onChange={onChange}
+        className="min-w-0 flex-1"
+        inputClassName="w-full min-w-0 bg-transparent px-0 py-[11px] text-center text-[16px] font-semibold leading-tight outline-none tabular"
+      />
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label="Больше"
+        className={btn}
+        onClick={() => {
+          const v = value ?? 0
+          onChange(round2(v + step(v, 1)))
+        }}
+      >
+        +
+      </button>
+    </div>
+  )
+}

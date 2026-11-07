@@ -33,6 +33,15 @@ export interface Client extends Base {
   avatarPhotoId: string | null
   archived: boolean
   demo?: boolean
+  pinned?: boolean // закреплён вверху списка
+  paidUntil?: string // оплачено до (YYYY-MM-DD)
+  schedule?: ScheduleSlot[] // дни тренировок
+}
+
+/** День недели (0 — воскресенье … 6 — суббота, как в JS) и время «18:30» */
+export interface ScheduleSlot {
+  day: number
+  time: string
 }
 
 export interface PlanExercise {

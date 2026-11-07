@@ -6,6 +6,7 @@ import { ActionSheet, Button, Card, Empty, IconButton, Section, Sheet, confirmAs
 import { IconChevron, IconEdit, IconMore, IconPlay, IconPlus, IconTrash } from '../../components/icons'
 import { planTarget, startWorkout } from '../../lib/workout'
 import { fmtDate } from '../../lib/format'
+import { nextProgramDay } from '../../lib/schedule'
 
 export async function createProgram(clientId: string): Promise<string> {
   const p: Program = {
@@ -29,11 +30,13 @@ export default function ProgramTab({ client, activeWorkoutId }: { client: Client
   const programs = useLiveQuery(() => db.programs.where('clientId').equals(client.id).toArray(), [client.id])
   const [pick, setPick] = useState(false)
   const [menuFor, setMenuFor] = useState<Program | null>(null)
+  const workouts = useLiveQuery(() => db.workouts.where('clientId').equals(client.id).toArray(), [client.id])
 
-  if (!programs) return null
+  if (!programs || !workouts) return null
   const sorted = [...programs].sort((a, b) => Number(b.active) - Number(a.active) || b.updatedAt - a.updatedAt)
   const active = sorted.find((p) => p.active) ?? null
   const others = sorted.filter((p) => p !== active)
+  const next = nextProgramDay(active, workouts)
 
   const deleteProgram = async (p: Program) => {
     if (!confirmAsk(`Удалить программу «${p.name}»? История проведённых тренировок останется.`)) return
@@ -65,6 +68,15 @@ export default function ProgramTab({ client, activeWorkoutId }: { client: Client
           <Button variant="primary" size="lg" block onClick={() => nav(`/client/${client.id}/workout/${activeWorkoutId}`)}>
             <IconPlay size={18} /> Продолжить тренировку
           </Button>
+        ) : next ? (
+          <>
+            <Button variant="primary" size="lg" block onClick={() => begin(next.id)}>
+              <IconPlay size={18} /> <span className="truncate">Начать: {next.name || 'следующий день'}</span>
+            </Button>
+            <Button variant="ghost" size="sm" block className="mt-1" onClick={() => setPick(true)}>
+              Выбрать другой день
+            </Button>
+          </>
         ) : (
           <Button variant="primary" size="lg" block onClick={() => setPick(true)}>
             <IconPlay size={18} /> Начать тренировку
@@ -158,7 +170,10 @@ export default function ProgramTab({ client, activeWorkoutId }: { client: Client
         <div className="space-y-2">
           {active?.days.map((d) => (
             <Card key={d.id} className="p-4" onClick={() => begin(d.id)}>
-              <div className="font-semibold">{d.name || 'День'}</div>
+              <div className="flex items-center gap-2 font-semibold">
+                {d.name || 'День'}
+                {next?.id === d.id && <span className="rounded-md bg-accent-soft px-1.5 py-0.5 text-[11px] font-semibold text-accent-text">по очереди</span>}
+              </div>
               <div className="mt-0.5 line-clamp-2 text-sm text-muted">
                 {d.exercises.map((e) => e.name).filter(Boolean).join(', ') || 'Нет упражнений'}
               </div>

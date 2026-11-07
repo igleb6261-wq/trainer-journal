@@ -2,9 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, exKey, rememberExercise, type SetEntry, type Workout, type WorkoutExercise } from '../db'
-import { ActionSheet, Button, Card, IconButton, NumField, Sheet, TextArea, TopBar, confirmAsk, cx, toast, BottomBar } from '../components/ui'
-import { IconCheck, IconFlag, IconMore, IconPlus, IconTrash } from '../components/icons'
-import { daysAgo, fmtDate, fmtDateLong, fullName, weekday } from '../lib/format'
+import { ActionSheet, Button, Card, IconButton, NumField, Sheet, Stepper, TextArea, TopBar, confirmAsk, cx, toast, BottomBar } from '../components/ui'
+import { IconAlert, IconBulb, IconCheck, IconDown, IconFlag, IconMore, IconPlus, IconTrash } from '../components/icons'
+import { daysAgo, fmtDate, fmtDateLong, num, shortName, weekday } from '../lib/format'
+import { progressionHint, weightStep } from '../lib/progression'
+import { restrictionsOf } from '../lib/restrictions'
+import { useQuestions } from '../lib/hooks'
 import { findPrevious, setsLine } from '../lib/summary'
 import { buildExercise, emptySet } from '../lib/workout'
 import { ExercisePicker } from '../components/ExercisePicker'
@@ -23,6 +26,8 @@ export default function WorkoutRunner() {
   const [exMenu, setExMenu] = useState<string | null>(null)
   const [picker, setPicker] = useState<{ mode: 'add' } | { mode: 'replace'; exId: string } | null>(null)
   const [dateEdit, setDateEdit] = useState(false)
+  const [limitsOpen, setLimitsOpen] = useState(true)
+  const questions = useQuestions()
   const saveTimer = useRef<number | undefined>(undefined)
   const latest = useRef<Workout | null>(null)
 
@@ -68,6 +73,7 @@ export default function WorkoutRunner() {
   if (w === null || !client) return <TopBar title="Тренировка не найдена" back />
 
   const isDone = w.status === 'done'
+  const limits = questions ? restrictionsOf(client, questions) : []
   const totalSets = w.exercises.reduce((a, e) => a + e.sets.length, 0)
   const doneSets = w.exercises.reduce((a, e) => a + e.sets.filter((s) => s.done).length, 0)
 
@@ -111,7 +117,10 @@ export default function WorkoutRunner() {
         title={w.dayName || 'Свободная тренировка'}
         subtitle={
           <span>
-            {fullName(client)} · <button className="underline decoration-dotted" onClick={() => setDateEdit(true)}>{fmtDate(w.date)}, {weekday(w.date)}</button>
+            <button className="underline decoration-dotted" onClick={() => setDateEdit(true)}>
+              {fmtDate(w.date)}, {weekday(w.date)}
+            </button>{' '}
+            · {shortName(client)}
           </span>
         }
         back
@@ -136,6 +145,25 @@ export default function WorkoutRunner() {
           </div>
         )}
 
+        {limits.length > 0 && (
+          <Card className="mb-3 border-down/40 bg-down-soft px-3.5 py-3">
+            <button className="flex w-full items-center gap-1.5 text-left text-[12px] font-semibold uppercase tracking-wide text-down" onClick={() => setLimitsOpen((o) => !o)}>
+              <IconAlert size={15} /> <span className="flex-1">Учитывай из анкеты</span>
+              <IconDown size={16} className={cx('transition', limitsOpen && 'rotate-180')} />
+            </button>
+            {limitsOpen && (
+              <div className="mt-1.5 space-y-1">
+                {limits.map((l) => (
+                  <div key={l.q} className="text-[14px] leading-snug">
+                    <span className="text-muted">{l.q}: </span>
+                    {l.a}
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
+
         {prevNote && (
           <Card className="mb-3 border-note/30 bg-note-soft p-4">
             <div className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wide text-note">
@@ -152,6 +180,7 @@ export default function WorkoutRunner() {
           {w.exercises.map((e, ei) => {
             const prev = history ? findPrevious(e.name, w, history) : null
             const allDone = e.sets.length > 0 && e.sets.every((s) => s.done)
+            const hint = !isDone && prev && e.target ? progressionHint(e.target, prev.exercise.sets, e.sets) : null
             return (
               <Card key={e.id} className={cx('overflow-hidden', allDone && !isDone && 'border-up/40')}>
                 <div className="flex items-start gap-2 px-4 pt-3">
@@ -178,8 +207,27 @@ export default function WorkoutRunner() {
                   </div>
                 )}
 
-                <div className="px-3 pb-1 pt-2">
-                  <div className="grid grid-cols-[28px_1fr_1fr_1fr_48px] items-center gap-2 px-1 pb-1 text-center text-[11px] font-medium text-muted">
+                {hint && (
+                  <div className="mx-4 mt-2 rounded-lg bg-up-soft px-3 py-2 text-[13px]">
+                    <div className="flex gap-1.5 text-up">
+                      <IconBulb size={16} className="mt-px shrink-0" />
+                      <span>{hint.text}</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="soft"
+                      className="mt-1.5 w-full"
+                      onClick={() =>
+                        updEx(e.id, (x) => ({ ...x, sets: x.sets.map((st) => (st.done ? st : { ...st, weight: hint.weight })) }))
+                      }
+                    >
+                      Поставить {num(hint.weight)} кг
+                    </Button>
+                  </div>
+                )}
+
+                <div className="px-2.5 pb-1 pt-2">
+                  <div className="grid grid-cols-[18px_1fr_1fr_50px_44px] items-center gap-1.5 pb-1 text-center text-[11px] font-medium text-muted">
                     <div>#</div>
                     <div>Вес, кг</div>
                     <div>Повторы</div>
@@ -190,13 +238,13 @@ export default function WorkoutRunner() {
                     <div
                       key={s.id}
                       className={cx(
-                        'mb-1.5 grid grid-cols-[28px_1fr_1fr_1fr_48px] items-center gap-2 rounded-xl px-1 py-1 transition',
+                        'mb-1.5 grid grid-cols-[18px_1fr_1fr_50px_44px] items-center gap-1.5 rounded-xl py-1 transition',
                         s.done && 'bg-up-soft',
                       )}
                     >
                       <div className="text-center text-sm font-medium text-muted tabular">{si + 1}</div>
-                      <NumField value={s.weight} onChange={(v) => updSet(e.id, s.id, { weight: v })} inputClassName={cell} />
-                      <NumField integer value={s.reps} onChange={(v) => updSet(e.id, s.id, { reps: v })} inputClassName={cell} />
+                      <Stepper value={s.weight} onChange={(v) => updSet(e.id, s.id, { weight: v })} step={weightStep} />
+                      <Stepper integer value={s.reps} onChange={(v) => updSet(e.id, s.id, { reps: v })} step={() => 1} />
                       <NumField value={s.rir} onChange={(v) => updSet(e.id, s.id, { rir: v })} inputClassName={cell} />
                       <button
                         aria-label="Подход выполнен"

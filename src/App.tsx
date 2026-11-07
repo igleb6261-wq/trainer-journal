@@ -1,7 +1,7 @@
 import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { useEffect, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { IconJournal, IconSettings, IconUsers } from './components/icons'
+import { IconCalendar, IconJournal, IconSettings, IconUsers } from './components/icons'
 import { SlotsContext, ToastHost, cx } from './components/ui'
 import ClientsList from './pages/ClientsList'
 import ClientForm from './pages/ClientForm'
@@ -10,6 +10,8 @@ import ProgramEditor from './pages/ProgramEditor'
 import WorkoutRunner from './pages/WorkoutRunner'
 import ExerciseProgress from './pages/ExerciseProgress'
 import Journal from './pages/Journal'
+import Today from './pages/Today'
+import { KeyboardBar } from './components/KeyboardBar'
 import Settings from './pages/Settings'
 import { QuestionsEditor, MetricsEditor, ExercisesEditor } from './pages/SettingsEditors'
 
@@ -27,7 +29,7 @@ function BottomNav() {
       to={to}
       end={end}
       className={({ isActive }) =>
-        cx('flex flex-1 flex-col items-center gap-0.5 pt-1.5 text-[10px] font-medium', isActive ? 'text-accent-text' : 'text-muted')
+        cx('flex flex-1 flex-col items-center gap-0.5 pt-1.5 text-[11px] font-medium', isActive ? 'text-accent-text' : 'text-muted')
       }
     >
       {icon}
@@ -38,9 +40,10 @@ function BottomNav() {
   const navEl = (
     <nav className="safe-bottom border-t border-line bg-bar">
       <div className="flex h-[52px]">
-        {item('/', 'Клиенты', <IconUsers size={26} />, true)}
-        {item('/journal', 'Журнал', <IconJournal size={26} />)}
-        {item('/settings', 'Настройки', <IconSettings size={26} />)}
+        {item('/', 'Клиенты', <IconUsers size={25} />, true)}
+        {item('/today', 'Сегодня', <IconCalendar size={25} />)}
+        {item('/journal', 'Журнал', <IconJournal size={25} />)}
+        {item('/settings', 'Настройки', <IconSettings size={25} />)}
       </div>
     </nav>
   )
@@ -59,9 +62,11 @@ export default function App() {
     <HashRouter>
       <ScrollTop />
       <ToastHost />
+      <KeyboardBar />
       <Shell>
         <Routes>
           <Route path="/" element={withNav(<ClientsList />)} />
+          <Route path="/today" element={withNav(<Today />)} />
           <Route path="/journal" element={withNav(<Journal />)} />
           <Route path="/settings" element={withNav(<Settings />)} />
           <Route path="/settings/questions" element={<QuestionsEditor />} />

@@ -3,8 +3,9 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, stamp, type Client, type Photo, type PhotoAngle } from '../../db'
 import { BlobImg } from '../../components/media'
 import { Button, Card, Empty, Field, Section, Segmented, Sheet, TextArea, confirmAsk, cx, toast } from '../../components/ui'
-import { IconCamera, IconSwap } from '../../components/icons'
+import { IconCamera } from '../../components/icons'
 import { compressImage } from '../../lib/image'
+import { GhostCamera } from '../../components/GhostCamera'
 import { ANGLE_LABEL, fmtDate, fmtDateLong, plural, todayISO } from '../../lib/format'
 
 const ANGLES: { value: PhotoAngle; label: string }[] = [
@@ -26,6 +27,7 @@ export default function PhotosTab({ client }: { client: Client }) {
   const [meta, setMeta] = useState({ date: todayISO(), angle: 'front' as PhotoAngle, comment: '' })
   const [saving, setSaving] = useState(false)
   const [view, setView] = useState<Photo | null>(null)
+  const [camera, setCamera] = useState(false)
   const [compare, setCompare] = useState(false)
 
   const groups = useMemo(() => {
@@ -60,14 +62,35 @@ export default function PhotosTab({ client }: { client: Client }) {
 
   return (
     <div>
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <Button variant="primary" size="lg" onClick={() => fileRef.current?.click()}>
-          <IconCamera size={20} /> Добавить
+      <div className="mt-4 grid grid-cols-[1.25fr_1fr_1fr] gap-2">
+        <Button variant="primary" size="lg" onClick={() => setCamera(true)}>
+          <IconCamera size={20} /> Снять
         </Button>
-        <Button size="lg" onClick={() => setCompare(true)} disabled={photos.length < 2}>
-          <IconSwap size={20} /> До / после
+        <Button size="lg" className="px-2" onClick={() => fileRef.current?.click()}>
+          Галерея
+        </Button>
+        <Button size="lg" className="px-2" onClick={() => setCompare(true)} disabled={photos.length < 2}>
+          До/после
         </Button>
       </div>
+      <div className="mt-1.5 px-1 text-[12px] text-muted">
+        «Снять» — камера с рамкой: поверх видно прошлое фото того же ракурса, чтобы клиент встал так же.
+      </div>
+      {camera && (
+        <GhostCamera
+          clientId={client.id}
+          onClose={() => setCamera(false)}
+          onFallback={() => {
+            setCamera(false)
+            fileRef.current?.click()
+          }}
+          onShot={(file, angle) => {
+            setCamera(false)
+            setMeta({ date: todayISO(), angle, comment: '' })
+            setPending([file])
+          }}
+        />
+      )}
       <input
         ref={fileRef}
         type="file"

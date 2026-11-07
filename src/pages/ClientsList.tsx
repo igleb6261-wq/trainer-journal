@@ -4,8 +4,9 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import { Avatar } from '../components/media'
 import { Button, Card, Empty, IconButton, Segmented, TopBar, cx, toast } from '../components/ui'
-import { IconPlay, IconPlus, IconSearch } from '../components/icons'
-import { daysAgo, fmtDate, fullName, plural } from '../lib/format'
+import { IconCalendar, IconChevron, IconPin, IconPlay, IconPlus, IconSearch } from '../components/icons'
+import { daysAgo, fmtDate, fullName, plural, todayISO } from '../lib/format'
+import { clientBadges, slotOn } from '../lib/schedule'
 import { loadDemo } from '../lib/demo'
 import { useBackupReminder } from '../lib/hooks'
 
@@ -36,8 +37,16 @@ export default function ClientsList() {
     return (clients ?? [])
       .filter((c) => (view === 'archived' ? c.archived : !c.archived))
       .filter((c) => !s || fullName(c).toLowerCase().includes(s) || c.contact.toLowerCase().includes(s))
-      .sort((a, b) => fullName(a).localeCompare(fullName(b), 'ru'))
+      .sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || fullName(a).localeCompare(fullName(b), 'ru'))
   }, [clients, q, view])
+
+  const todayList = useMemo(
+    () =>
+      (clients ?? [])
+        .filter((c) => !c.archived && slotOn(c, todayISO()) !== null)
+        .sort((a, b) => (slotOn(a, todayISO()) || '99').localeCompare(slotOn(b, todayISO()) || '99')),
+    [clients],
+  )
 
   const archivedCount = (clients ?? []).filter((c) => c.archived).length
 
@@ -63,6 +72,21 @@ export default function ClientsList() {
             <div className="mt-0.5 text-sm text-muted">
               Данные хранятся только в этом телефоне. Нажми, чтобы сохранить копию.
             </div>
+          </Card>
+        )}
+
+        {todayList.length > 0 && view === 'active' && !q && (
+          <Card className="mb-3 flex items-center gap-3 px-3.5 py-3" onClick={() => nav('/today')}>
+            <IconCalendar size={22} className="shrink-0 text-accent-text" />
+            <div className="min-w-0 flex-1">
+              <div className="text-[15px] font-semibold">
+                Сегодня {todayList.length} {plural(todayList.length, 'тренировка', 'тренировки', 'тренировок')}
+              </div>
+              <div className="truncate text-[13px] text-muted">
+                {todayList.map((c) => `${slotOn(c, todayISO()) || ''} ${c.firstName || c.lastName}`.trim()).join(' · ')}
+              </div>
+            </div>
+            <IconChevron size={18} className="text-muted" />
           </Card>
         )}
 
@@ -116,6 +140,7 @@ export default function ClientsList() {
           <div className="-mx-4 mt-3 bg-surface">
             {list.map((c, i) => {
               const info = lastByClient.get(c.id)
+              const badges = clientBadges(c, info?.last, info?.count ?? 0)
               return (
                 <div
                   key={c.id}
@@ -125,13 +150,11 @@ export default function ClientsList() {
                   <Avatar client={c} size={56} />
                   <div className={cx('min-w-0 flex-1 py-2.5 pr-4', i < list.length - 1 && 'border-b border-line')}>
                     <div className="flex items-baseline gap-2">
-                      <div className="min-w-0 flex-1 truncate text-[16px] font-semibold">
-                        {fullName(c)}
-                        {c.demo && <span className="ml-1.5 text-xs font-normal text-muted">демо</span>}
-                      </div>
+                      <div className="min-w-0 flex-1 truncate text-[16px] font-semibold">{fullName(c)}</div>
+                      {c.pinned && <IconPin size={14} className="shrink-0 self-center text-muted" />}
                       {info?.last && <div className="shrink-0 text-[13px] text-muted">{fmtDate(info.last)}</div>}
                     </div>
-                    <div className="mt-0.5 line-clamp-2 text-[15px] leading-snug text-muted">
+                    <div className="mt-0.5 line-clamp-1 text-[15px] leading-snug text-muted">
                       {info?.active ? (
                         <span className="inline-flex items-center gap-1 text-accent-text">
                           <IconPlay size={11} /> идёт тренировка
@@ -143,6 +166,25 @@ export default function ClientsList() {
                       )}
                       {c.goal && <span> · {c.goal}</span>}
                     </div>
+                    {(badges.length > 0 || c.demo) && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {c.demo && <span className="rounded-md bg-surface-2 px-1.5 py-0.5 text-[11px] font-medium text-muted">демо</span>}
+                        {badges.map((b) => (
+                          <span
+                            key={b.text}
+                            className={cx(
+                              'rounded-md px-1.5 py-0.5 text-[11px] font-medium',
+                              b.tone === 'accent' && 'bg-accent-soft text-accent-text',
+                              b.tone === 'muted' && 'bg-surface-2 text-muted',
+                              b.tone === 'down' && 'bg-down-soft text-down',
+                              b.tone === 'danger' && 'bg-danger-soft text-danger',
+                            )}
+                          >
+                            {b.text}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )

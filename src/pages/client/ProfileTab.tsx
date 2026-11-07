@@ -4,6 +4,7 @@ import { db, type Client } from '../../db'
 import { Button, Card, Row, Section, Sheet, TextArea, toast } from '../../components/ui'
 import { IconEdit } from '../../components/icons'
 import { useQuestions } from '../../lib/hooks'
+import { WD_SHORT, WEEK_ORDER } from '../../lib/schedule'
 import { FORMAT_LABEL, SEX_LABEL, ageFrom, fmtDateLong, num } from '../../lib/format'
 
 export default function ProfileTab({ client }: { client: Client }) {
@@ -55,6 +56,20 @@ export default function ProfileTab({ client }: { client: Client }) {
           <Row label="Telegram / Instagram" value={client.contact || '—'} />
           <Row label="Формат" value={FORMAT_LABEL[client.format]} />
           <Row label="Начало работы" value={client.startDate ? fmtDateLong(client.startDate) : '—'} />
+          <Row label="Оплачено до" value={client.paidUntil ? fmtDateLong(client.paidUntil) : '—'} />
+          <Row
+            label="Дни тренировок"
+            value={
+              client.schedule?.length
+                ? WEEK_ORDER.filter((d) => client.schedule!.some((s) => s.day === d))
+                    .map((d) => {
+                      const t = client.schedule!.find((s) => s.day === d)!.time
+                      return t ? `${WD_SHORT[d]} ${t}` : WD_SHORT[d]
+                    })
+                    .join(', ')
+                : '—'
+            }
+          />
         </Card>
       </Section>
 

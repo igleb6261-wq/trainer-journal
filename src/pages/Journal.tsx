@@ -5,7 +5,8 @@ import { db, type Workout } from '../db'
 import { Avatar } from '../components/media'
 import { Card, Chip, Empty, Section, TopBar } from '../components/ui'
 import { IconChevron, IconPlay } from '../components/icons'
-import { fmtDate, fmtDateLong, fullName, weekday } from '../lib/format'
+import { daysAgo, fmtDate, fmtDateLong, fullName, weekday } from '../lib/format'
+import { isStale } from '../lib/schedule'
 import { workoutSummary } from '../lib/summary'
 
 const sortDesc = (a: Workout, b: Workout) => (a.date === b.date ? b.createdAt - a.createdAt : b.date.localeCompare(a.date))
@@ -53,9 +54,13 @@ export default function Journal() {
                     <Avatar client={c} size={40} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-medium">{fullName(c)}</div>
-                      <div className="text-[13px] text-accent-text">
-                        <IconPlay size={10} className="inline" /> {w.dayName || 'Свободная'} · {fmtDate(w.date)}
-                      </div>
+                      {isStale(w) ? (
+                        <div className="text-[13px] text-down">Не завершена · начата {daysAgo(w.date)} — нажми, чтобы закрыть</div>
+                      ) : (
+                        <div className="text-[13px] text-accent-text">
+                          <IconPlay size={10} className="inline" /> {w.dayName || 'Свободная'} · {fmtDate(w.date)}
+                        </div>
+                      )}
                     </div>
                     <IconChevron size={18} className="text-muted" />
                   </Card>

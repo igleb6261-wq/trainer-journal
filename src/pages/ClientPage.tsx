@@ -3,8 +3,23 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, deleteClientCascade } from '../db'
 import { Avatar } from '../components/media'
-import { ActionSheet, Card, IconButton, TopBar, confirmAsk, cx, toast } from '../components/ui'
-import { IconArchive, IconEdit, IconFlag, IconMore, IconPlay, IconTrash } from '../components/icons'
+import { ActionSheet, Button, Card, IconButton, TopBar, confirmAsk, cx, toast } from '../components/ui'
+import {
+  IconArchive,
+  IconCamera,
+  IconClipboard,
+  IconClock,
+  IconDumbbell,
+  IconEdit,
+  IconFlag,
+  IconMore,
+  IconPin,
+  IconPlay,
+  IconRuler,
+  IconTrash,
+} from '../components/icons'
+import { isStale } from '../lib/schedule'
+import { finishWorkout } from '../lib/workout'
 import { ageFrom, daysAgo, fullName, plural } from '../lib/format'
 import ProfileTab from './client/ProfileTab'
 import ProgramTab from './client/ProgramTab'
@@ -13,11 +28,11 @@ import MeasurementsTab from './client/MeasurementsTab'
 import PhotosTab from './client/PhotosTab'
 
 const TABS = [
-  { key: 'profile', label: 'Анкета' },
-  { key: 'program', label: 'Программа' },
-  { key: 'history', label: 'История' },
-  { key: 'measure', label: 'Замеры' },
-  { key: 'photos', label: 'Фото' },
+  { key: 'profile', label: 'Анкета', icon: IconClipboard },
+  { key: 'program', label: 'Программа', icon: IconDumbbell },
+  { key: 'history', label: 'История', icon: IconClock },
+  { key: 'measure', label: 'Замеры', icon: IconRuler },
+  { key: 'photos', label: 'Фото', icon: IconCamera },
 ] as const
 type TabKey = (typeof TABS)[number]['key']
 
@@ -55,7 +70,8 @@ export default function ClientPage() {
   return (
     <div>
       <TopBar
-        title=""
+        title={fullName(client)}
+        subtitle={sub || undefined}
         back="/"
         right={
           <IconButton onClick={() => setMenu(true)} aria-label="Ещё">
@@ -65,56 +81,89 @@ export default function ClientPage() {
       />
 
       <div className="px-4 pt-3">
-        {/* профиль по центру, как в мессенджере */}
-        <div className="flex flex-col items-center pb-1 pt-2 text-center">
-          <Avatar client={client} size={88} />
-          <div className="mt-2.5 text-[22px] font-semibold leading-tight">{fullName(client)}</div>
-          {sub && <div className="mt-1 text-[14px] text-muted">{sub}</div>}
-          <div className="mt-0.5 text-[14px] text-muted">
-            {done.length} {plural(done.length, 'тренировка', 'тренировки', 'тренировок')}
-            {last && ` · последняя ${daysAgo(last.date)}`}
+        {/* компактная шапка: аватар слева, цель и статистика рядом */}
+        <div className="flex items-center gap-3">
+          <Avatar client={client} size={52} />
+          <div className="min-w-0 flex-1">
+            {client.goal ? (
+              <div className="line-clamp-2 text-[15px] leading-snug">{client.goal}</div>
+            ) : (
+              <div className="text-[15px] text-muted">Цель не указана</div>
+            )}
+            <div className="mt-0.5 text-[13px] text-muted">
+              {done.length} {plural(done.length, 'тренировка', 'тренировки', 'тренировок')}
+              {last && ` · последняя ${daysAgo(last.date)}`}
+            </div>
           </div>
-          {client.goal && <div className="mt-2 line-clamp-3 max-w-sm text-[15px]">{client.goal}</div>}
+          {client.pinned && <IconPin size={16} className="shrink-0 text-muted" />}
         </div>
 
-        {active && (
-          <Card
-            className="mt-3 flex items-center gap-3 border-accent-text/40 bg-accent-soft p-4"
-            onClick={() => nav(`/client/${id}/workout/${active.id}`)}
-          >
-            <IconPlay size={20} className="text-accent-text" />
-            <div className="flex-1">
-              <div className="font-semibold text-accent-text">Идёт тренировка</div>
-              <div className="text-sm text-muted">{active.dayName || 'Свободная тренировка'} — нажми, чтобы продолжить</div>
-            </div>
-          </Card>
-        )}
+        {active &&
+          (isStale(active) ? (
+            <Card className="mt-3 border-down/40 bg-down-soft p-4">
+              <div className="font-semibold text-down">Незавершённая тренировка</div>
+              <div className="mt-0.5 text-sm text-muted">
+                {active.dayName || 'Свободная тренировка'} · начата {daysAgo(active.date)}. Её забыли завершить?
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <Button size="sm" variant="primary" onClick={async () => {
+                  await finishWorkout(active)
+                  toast('Тренировка сохранена в истории')
+                }}>
+                  Завершить
+                </Button>
+                <Button size="sm" onClick={() => nav(`/client/${id}/workout/${active.id}`)}>
+                  Открыть
+                </Button>
+                <Button size="sm" variant="danger" onClick={async () => {
+                  if (!confirmAsk('Удалить незавершённую тренировку?')) return
+                  await db.workouts.delete(active.id)
+                  toast('Тренировка удалена')
+                }}>
+                  Удалить
+                </Button>
+              </div>
+            </Card>
+          ) : (
+            <Card
+              className="mt-3 flex items-center gap-3 border-accent-text/40 bg-accent-soft p-3.5"
+              onClick={() => nav(`/client/${id}/workout/${active.id}`)}
+            >
+              <IconPlay size={20} className="text-accent-text" />
+              <div className="flex-1">
+                <div className="font-semibold text-accent-text">Идёт тренировка</div>
+                <div className="text-sm text-muted">{active.dayName || 'Свободная тренировка'} — нажми, чтобы продолжить</div>
+              </div>
+            </Card>
+          ))}
 
         {last?.nextNote.trim() && (
-          <Card className="mt-3 border-note/30 bg-note-soft p-4">
-            <div className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wide text-note">
-              <IconFlag size={15} /> Задача с прошлой тренировки
+          <Card className="mt-3 border-note/30 bg-note-soft px-3.5 py-3">
+            <div className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-note">
+              <IconFlag size={14} /> Задача с прошлой тренировки · {daysAgo(last.date)}
             </div>
-            <div className="mt-1 whitespace-pre-wrap text-[15px]">{last.nextNote}</div>
-            <div className="mt-1 text-xs text-muted">от {daysAgo(last.date)}</div>
+            <div className="mt-1 line-clamp-4 whitespace-pre-wrap text-[15px] leading-snug">{last.nextNote}</div>
           </Card>
         )}
       </div>
 
-      <div className="no-scrollbar sticky top-0 z-20 mt-3 flex gap-1 overflow-x-auto border-b border-line bg-bar px-3">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setSp({ tab: t.key }, { replace: true })}
-            className={cx(
-              'relative shrink-0 px-3 py-3 text-[15px] font-medium',
-              tab === t.key ? 'text-ink' : 'text-muted',
-            )}
-          >
-            {t.label}
-            {tab === t.key && <span className="absolute inset-x-3 bottom-0 h-[3px] rounded-full bg-accent" />}
-          </button>
-        ))}
+      {/* вкладки значками — все пять помещаются на экран */}
+      <div className="sticky top-0 z-20 mt-3 grid grid-cols-5 border-b border-line bg-bar">
+        {TABS.map((t) => {
+          const Icon = t.icon
+          const on = tab === t.key
+          return (
+            <button
+              key={t.key}
+              onClick={() => setSp({ tab: t.key }, { replace: true })}
+              className={cx('relative flex flex-col items-center gap-0.5 pb-2 pt-2.5 text-[11px] font-medium', on ? 'text-accent-text' : 'text-muted')}
+            >
+              <Icon size={21} />
+              {t.label}
+              {on && <span className="absolute inset-x-3 bottom-0 h-[3px] rounded-full bg-accent" />}
+            </button>
+          )
+        })}
       </div>
 
       <div className="px-4 pb-6">
@@ -131,6 +180,14 @@ export default function ClientPage() {
         title={fullName(client)}
         actions={[
           { label: 'Редактировать данные', icon: <IconEdit size={20} />, onClick: () => nav(`/client/${id}/edit`) },
+          {
+            label: client.pinned ? 'Открепить' : 'Закрепить вверху списка',
+            icon: <IconPin size={20} />,
+            onClick: async () => {
+              await db.clients.update(id, { pinned: !client.pinned, updatedAt: Date.now() })
+              toast(client.pinned ? 'Клиент откреплён' : 'Клиент закреплён')
+            },
+          },
           {
             label: client.archived ? 'Вернуть из архива' : 'Перенести в архив',
             icon: <IconArchive size={20} />,
