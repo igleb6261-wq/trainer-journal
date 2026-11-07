@@ -320,17 +320,9 @@ function MetricRow({
         />
       </div>
       {open && guide && (
-        <div className="anim-fade border-t border-line px-3 pb-3.5 pt-3">
-          {/* слева — вся фигура (где на теле), справа — крупно само место замера */}
-          <div className="flex gap-2">
-            <div className="flex w-[100px] shrink-0 items-center justify-center rounded-xl bg-bg/50 py-2">
-              <BodyFigure zone={guide.zone} className="h-[214px] w-[94px]" />
-            </div>
-            <div className="flex min-w-0 flex-1 items-center justify-center rounded-xl bg-bg/50 p-1">
-              <BodyFigure zone={guide.zone} zoom className="aspect-square w-full max-w-[230px]" />
-            </div>
-          </div>
-          <div className="mt-3 text-[14px] leading-snug">
+        <div className="anim-fade flex gap-3 border-t border-line px-3 pb-3.5 pt-3">
+          <BodyFigure zone={guide.zone} className="h-[230px] w-[102px] shrink-0" />
+          <div className="min-w-0 flex-1 text-[14px] leading-snug">
             <div className="mb-0.5 text-[12px] font-semibold uppercase tracking-wide text-muted">Где</div>
             <div>{guide.where}</div>
             <div className="mb-0.5 mt-2.5 text-[12px] font-semibold uppercase tracking-wide text-muted">Как мерить</div>
