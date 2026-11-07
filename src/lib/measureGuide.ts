@@ -21,7 +21,7 @@ const L = 118
 
 export const MEASURE_GUIDE: Record<string, MeasureGuide> = {
   weight: {
-    zone: { scale: true, crop: [40, 334, 120, 120] },
+    zone: { scale: true, crop: [40, 326, 120, 120] },
     where: 'Утром натощак, после туалета, до еды и воды.',
     how: [
       'Взвешивайся в одном и том же белье или без одежды.',
@@ -31,7 +31,7 @@ export const MEASURE_GUIDE: Record<string, MeasureGuide> = {
     tip: 'Вес колеблется на 0,5–1,5 кг день ко дню — смотри на изменение за 1–2 недели.',
   },
   chest: {
-    zone: { bands: [{ cx: 100, cy: 132, rx: 34 }], crop: [40, 72, 120, 120] },
+    zone: { bands: [{ cx: 100, cy: 118, rx: 32 }], crop: [40, 58, 120, 120] },
     where: 'По самой выступающей части груди: у мужчин — по соскам, у женщин — по самым выступающим точкам груди. Сзади — по лопаткам.',
     how: [
       'Клиент стоит прямо, руки опущены и расслаблены.',
@@ -42,7 +42,7 @@ export const MEASURE_GUIDE: Record<string, MeasureGuide> = {
     tip: 'Женщинам — мерить в одном и том же белье без поролона.',
   },
   shoulders: {
-    zone: { bands: [{ cx: 100, cy: 100, rx: 50 }], crop: [30, 40, 140, 140] },
+    zone: { bands: [{ cx: 100, cy: 96, rx: 56 }], crop: [28, 26, 144, 144] },
     where: 'По самым выступающим точкам плеч (дельт) — лента обхватывает корпус вместе с руками.',
     how: [
       'Клиент стоит прямо, руки опущены вдоль тела, плечи не поднимать.',
@@ -51,7 +51,7 @@ export const MEASURE_GUIDE: Record<string, MeasureGuide> = {
     ],
   },
   waist: {
-    zone: { bands: [{ cx: 100, cy: 182, rx: 26 }], dot: [100, 182], crop: [45, 127, 110, 110] },
+    zone: { bands: [{ cx: 100, cy: 160, rx: 25 }], dot: [100, 160], crop: [45, 105, 110, 110] },
     where: 'Горизонтально через пупок.',
     how: [
       'Клиент стоит прямо, стопы вместе.',
@@ -62,7 +62,7 @@ export const MEASURE_GUIDE: Record<string, MeasureGuide> = {
     tip: 'Главный показатель при похудении — мерить всегда через пупок, чтобы цифры можно было сравнивать.',
   },
   glutes: {
-    zone: { bands: [{ cx: 100, cy: 226, rx: 37 }], crop: [40, 166, 120, 120] },
+    zone: { bands: [{ cx: 100, cy: 200, rx: 35 }], crop: [40, 140, 120, 120] },
     where: 'По самым выступающим точкам ягодиц.',
     how: [
       'Клиент стоит прямо, стопы вместе, ягодицы расслаблены.',
@@ -71,7 +71,7 @@ export const MEASURE_GUIDE: Record<string, MeasureGuide> = {
     ],
   },
   thighR: {
-    zone: { bands: [{ cx: R, cy: 262, rx: 18 }], side: true, crop: [37, 217, 90, 90] },
+    zone: { bands: [{ cx: R, cy: 228, rx: 17.5 }], side: true, crop: [37, 183, 90, 90] },
     where: 'Правое бедро сразу под ягодичной складкой — самое широкое место.',
     how: [
       'Клиент стоит прямо, стопы на ширине плеч, вес на обе ноги.',
@@ -81,7 +81,7 @@ export const MEASURE_GUIDE: Record<string, MeasureGuide> = {
     tip: 'Чтобы мерить на одной высоте, можно запомнить расстояние от колена.',
   },
   thighL: {
-    zone: { bands: [{ cx: L, cy: 262, rx: 18 }], side: true, crop: [73, 217, 90, 90] },
+    zone: { bands: [{ cx: L, cy: 228, rx: 17.5 }], side: true, crop: [73, 183, 90, 90] },
     where: 'Левое бедро сразу под ягодичной складкой — самое широкое место.',
     how: [
       'Клиент стоит прямо, стопы на ширине плеч, вес на обе ноги.',
@@ -91,7 +91,7 @@ export const MEASURE_GUIDE: Record<string, MeasureGuide> = {
     tip: 'Чтобы мерить на одной высоте, можно запомнить расстояние от колена.',
   },
   calfR: {
-    zone: { bands: [{ cx: R, cy: 350, rx: 12 }], side: true, crop: [47, 315, 70, 70] },
+    zone: { bands: [{ cx: 83, cy: 345, rx: 12 }], side: true, crop: [48, 310, 70, 70] },
     where: 'Правая голень — самое широкое место икры.',
     how: [
       'Клиент стоит прямо, вес на обе ноги, икры расслаблены.',
@@ -100,7 +100,7 @@ export const MEASURE_GUIDE: Record<string, MeasureGuide> = {
     ],
   },
   calfL: {
-    zone: { bands: [{ cx: L, cy: 350, rx: 12 }], side: true, crop: [83, 315, 70, 70] },
+    zone: { bands: [{ cx: 117, cy: 345, rx: 12 }], side: true, crop: [82, 310, 70, 70] },
     where: 'Левая голень — самое широкое место икры.',
     how: [
       'Клиент стоит прямо, вес на обе ноги, икры расслаблены.',
@@ -109,7 +109,7 @@ export const MEASURE_GUIDE: Record<string, MeasureGuide> = {
     ],
   },
   bicepsR: {
-    zone: { bands: [{ cx: 49, cy: 150, rx: 11 }], side: true, crop: [9, 110, 80, 80] },
+    zone: { bands: [{ cx: 53.5, cy: 130, rx: 8.5 }], side: true, crop: [14, 90, 80, 80] },
     where: 'Правая рука, середина плеча — самое широкое место бицепса.',
     how: [
       'Рука свободно висит вдоль тела, локоть прямой.',
@@ -118,7 +118,7 @@ export const MEASURE_GUIDE: Record<string, MeasureGuide> = {
     ],
   },
   bicepsL: {
-    zone: { bands: [{ cx: 151, cy: 150, rx: 11 }], side: true, crop: [111, 110, 80, 80] },
+    zone: { bands: [{ cx: 146.5, cy: 130, rx: 8.5 }], side: true, crop: [106, 90, 80, 80] },
     where: 'Левая рука, середина плеча — самое широкое место бицепса.',
     how: [
       'Рука свободно висит вдоль тела, локоть прямой.',
@@ -127,7 +127,7 @@ export const MEASURE_GUIDE: Record<string, MeasureGuide> = {
     ],
   },
   forearm: {
-    zone: { bands: [{ cx: 39, cy: 214, rx: 8.5 }], side: true, crop: [4, 179, 70, 70] },
+    zone: { bands: [{ cx: 48.7, cy: 175, rx: 7.5 }], side: true, crop: [14, 140, 70, 70] },
     where: 'Самое широкое место предплечья — чуть ниже локтя.',
     how: [
       'Рука опущена вдоль тела и расслаблена, ладонь смотрит вперёд.',

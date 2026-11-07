@@ -21,6 +21,8 @@
   --down-soft: rgba(255, 159, 10, 0.16);
   --note: #bf5af2;
   --note-soft: rgba(191, 90, 242, 0.16);
+  --fig: #3b3b40; /* фигура в подсказках замеров */
+  --fig-hi: #57575d;
   color-scheme: dark;
 }
 
@@ -45,6 +47,8 @@
     --down-soft: rgba(255, 149, 0, 0.12);
     --note: #af52de;
     --note-soft: rgba(175, 82, 222, 0.1);
+    --fig: #c2c2c9;
+    --fig-hi: #dcdce1;
     color-scheme: light;
   }
 }
@@ -69,6 +73,8 @@
   --down-soft: rgba(255, 149, 0, 0.12);
   --note: #af52de;
   --note-soft: rgba(175, 82, 222, 0.1);
+  --fig: #c2c2c9;
+  --fig-hi: #dcdce1;
   color-scheme: light;
 }
 
@@ -193,11 +199,6 @@ input[type='date']::-webkit-date-and-time-value {
 }
 .anim-fade {
   animation: fade-in 180ms ease-out;
-}
-
-/* цвет схематичной фигуры в подсказках замеров */
-:root {
-  --fig: color-mix(in srgb, var(--text) 20%, var(--surface));
 }
 
 /* ============ «Островки» с вкладками (нижняя панель и вкладки клиента) ============ */

@@ -2,13 +2,14 @@
  * Схематичная фигура человека (вид спереди) с отмеченным местом замера:
  * сантиметровая лента — синяя дуга вокруг нужной части тела.
  */
+import { useId } from 'react'
 import type { MeasureZone } from '../lib/measureGuide'
 
-const TORSO_HALF =
-  'M 101 74 L 91 75 C 80 77 70 80 62 85 C 53 90 50 101 57 112 C 62 118 66 122 67 130 C 68 148 75 162 75 178 C 75 192 66 202 64 216 L 64 236 L 101 244 Z'
+/** Контур тела без рук (симметричный), рост ≈ 8 голов */
+const BODY =
+  'M 91 50 C 91 62 90 70 86 76 C 78 80 66 82 57 86 C 49 90 48 102 52 110 C 56 114 64 112 69 114 C 71 128 75 142 76 155 C 77 168 67 180 66 196 C 65 230 70 270 74 302 C 75 312 70 328 72 345 C 74 370 80 392 81 404 C 81 410 74 414 75 418 C 76 423 92 423 94 418 C 94 410 92 400 93 392 C 95 365 96 340 93 318 C 91 300 96 250 99 216 L 100 214 L 101 216 C 104 250 109 300 107 318 C 104 340 105 365 107 392 C 108 400 106 410 106 418 C 108 423 124 423 125 418 C 126 414 119 410 119 404 C 120 392 126 370 128 345 C 130 328 125 312 126 302 C 130 270 135 230 134 196 C 133 180 123 168 124 155 C 125 142 129 128 131 114 C 136 112 144 114 148 110 C 152 102 151 90 143 86 C 134 82 122 80 114 76 C 110 70 109 62 109 50 Z'
 const ARM =
-  'M 57 89 C 46 94 41 124 39 156 C 38 172 36 184 34 194 C 31 216 28 240 27 260 L 40 262 C 42 242 46 220 49 198 C 52 180 56 164 58 148 C 60 138 61 130 61 122 Z'
-const LEG = 'M 66 206 C 61 240 63 298 70 330 C 66 348 68 372 76 418 L 92 420 C 95 392 98 366 95 336 C 97 310 99 282 100 250 Z'
+  'M 56 87 C 47 93 45 108 46 122 C 46 138 44 150 43 160 C 42 178 40 196 40 210 C 39 222 38 238 43 246 C 47 250 51 246 51 238 C 51 228 50 218 49 210 C 50 196 54 178 56 162 C 58 148 62 128 66 114 C 64 104 60 92 56 87 Z'
 const MIRROR = 'translate(200 0) scale(-1 1)'
 
 export function BodyFigure({ zone, mini = false, className }: { zone?: MeasureZone; mini?: boolean; className?: string }) {
@@ -17,8 +18,16 @@ export function BodyFigure({ zone, mini = false, className }: { zone?: MeasureZo
   const k = box[2] / 46 // единиц рисунка на 1 px маленькой картинки
   const sw = mini ? 2.6 * k : 3.2
   const bands = zone?.bands ?? []
+  const gid = useId()
   return (
     <svg viewBox={box.join(' ')} className={className} aria-hidden>
+      <defs>
+        <linearGradient id={gid} x1="0" x2="1">
+          <stop offset="0" style={{ stopColor: 'var(--fig)' }} />
+          <stop offset="0.5" style={{ stopColor: 'var(--fig-hi)' }} />
+          <stop offset="1" style={{ stopColor: 'var(--fig)' }} />
+        </linearGradient>
+      </defs>
       {/* задняя половина ленты — за телом, видна только по краям */}
       {bands.map((b, i) => (
           <path
@@ -33,23 +42,15 @@ export function BodyFigure({ zone, mini = false, className }: { zone?: MeasureZo
         ))}
       {zone?.scale && (
         <g>
-          <rect x="52" y="421" width="96" height="24" rx="7" fill="var(--accent)" fillOpacity={mini ? 0.9 : 0.85} />
-          {!mini && <rect x="86" y="436" width="28" height="6" rx="2" fill="var(--bg)" fillOpacity={0.6} />}
+          <rect x="58" y="413" width="84" height="24" rx="7" fill="var(--accent)" fillOpacity={mini ? 0.9 : 0.85} />
+          {!mini && <rect x="88" y="428" width="24" height="5" rx="2" fill="var(--bg)" fillOpacity={0.6} />}
         </g>
       )}
-      <g fill="var(--fig)">
-        <ellipse cx="100" cy="36" rx="19" ry="23" />
-        <rect x="90" y="52" width="20" height="28" rx="7" />
-        <path d={TORSO_HALF} />
-        <path d={TORSO_HALF} transform={MIRROR} />
+      <g fill={`url(#${gid})`}>
+        <ellipse cx="100" cy="33" rx="17" ry="22" />
+        <path d={BODY} />
         <path d={ARM} />
         <path d={ARM} transform={MIRROR} />
-        <ellipse cx="33" cy="277" rx="7.5" ry="14" transform="rotate(8 33 277)" />
-        <ellipse cx="167" cy="277" rx="7.5" ry="14" transform="rotate(-8 167 277)" />
-        <path d={LEG} />
-        <path d={LEG} transform={MIRROR} />
-        <ellipse cx="82" cy="426" rx="13" ry="7" />
-        <ellipse cx="118" cy="426" rx="13" ry="7" />
       </g>
       {zone?.dot && <circle cx={zone.dot[0]} cy={zone.dot[1]} r={mini ? 2 * k : 3} fill="var(--accent)" />}
       {/* передняя половина ленты */}
@@ -75,8 +76,8 @@ export function BodyFigure({ zone, mini = false, className }: { zone?: MeasureZo
       {/* где правая, где левая сторона клиента (вид спереди — зеркально) */}
       {zone?.side && !mini && (
         <g fontSize="15" fontWeight="600" fill="var(--muted)" textAnchor="middle">
-          <text x="14" y="318">П</text>
-          <text x="186" y="318">Л</text>
+          <text x="24" y="270">П</text>
+          <text x="176" y="270">Л</text>
         </g>
       )}
     </svg>

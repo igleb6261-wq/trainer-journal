@@ -272,6 +272,10 @@ function RulesCard() {
   )
 }
 
+/** Поле ввода, заметное на фоне карточки */
+const INPUT =
+  'w-full rounded-xl border border-line bg-surface-2 py-2.5 pl-3 pr-10 text-right text-[17px] font-semibold tabular text-ink outline-none placeholder:font-normal placeholder:text-muted/60 focus:border-accent-text'
+
 /** Строка показателя: мини-фигура с местом замера, название, поле. По нажатию — подробная подсказка */
 function MetricRow({
   metric,
@@ -306,7 +310,14 @@ function MetricRow({
             {last && <span className="text-muted tabular">было {last}</span>}
           </div>
         </button>
-        <NumField className="w-[104px] shrink-0" suffix={metric.unit} value={value} onChange={onChange} />
+        <NumField
+          className="w-[108px] shrink-0"
+          inputClassName={cx(INPUT, open && 'border-accent-text')}
+          suffix={metric.unit}
+          placeholder="0"
+          value={value}
+          onChange={onChange}
+        />
       </div>
       {open && guide && (
         <div className="anim-fade flex gap-3 border-t border-line px-3 pb-3.5 pt-3">
@@ -325,6 +336,19 @@ function MetricRow({
             </ol>
             {guide.tip && <div className="mt-2.5 rounded-lg bg-accent-soft px-2.5 py-2 text-[13px]">{guide.tip}</div>}
           </div>
+        </div>
+      )}
+      {open && guide && (
+        <div className="flex items-center gap-3 border-t border-line px-3 py-2.5">
+          <div className="flex-1 text-[15px] font-medium">Запиши результат</div>
+          <NumField
+            className="w-[140px] shrink-0"
+            inputClassName={cx(INPUT, 'border-accent-text')}
+            suffix={metric.unit}
+            placeholder="0"
+            value={value}
+            onChange={onChange}
+          />
         </div>
       )}
     </Card>
