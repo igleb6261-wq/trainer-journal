@@ -142,21 +142,27 @@ input[type='date']::-webkit-date-and-time-value {
   font-variant-numeric: tabular-nums;
 }
 
-/* Отступ сверху. На iPhone в приложении с экрана «Домой» система размывает
-   полосу под строкой состояния — поэтому там опускаем шапку чуть ниже. */
+/* Отступ сверху. На iPhone в приложении с экрана «Домой» с прозрачной строкой
+   состояния система размывает полосу под часами (~30 pt) — там шапку опускаем ниже.
+   Если строка состояния непрозрачная (отступ сверху = 0), добавка тоже 0. */
 :root {
   --top-inset: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
 }
 @media (display-mode: standalone) {
   :root {
-    --top-inset: calc(env(safe-area-inset-top) + 26px);
+    --top-inset: calc(env(safe-area-inset-top) + min(26px, env(safe-area-inset-top)));
   }
+}
+/* ошибка iOS 26: внизу системная чёрная полоса уже закрывает «полоску домой» */
+:root.ios-gap {
+  --safe-bottom: 6px;
 }
 .safe-top {
   padding-top: var(--top-inset);
 }
 .safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: var(--safe-bottom);
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -191,12 +197,17 @@ input[type='date']::-webkit-date-and-time-value {
 
 /* ============ «Островки» с вкладками (нижняя панель и вкладки клиента) ============ */
 :root {
-  /* отступ островка от низа экрана: над полоской «домой», но не слишком высоко */
-  --nav-gap: max(10px, calc(env(safe-area-inset-bottom) - 8px));
+  /* отступ островка от низа экрана: чуть выше полоски «домой» */
+  --nav-gap: max(10px, calc(env(safe-area-inset-bottom) - 16px));
 }
-.island {
+:root.ios-gap {
+  --nav-gap: 6px;
+}
+.island,
+.glass,
+.hdr-actions > button {
   background: var(--bar);
-  background: color-mix(in srgb, var(--bar) 80%, transparent);
+  background: color-mix(in srgb, var(--bar) 86%, transparent);
   -webkit-backdrop-filter: blur(22px) saturate(180%);
   backdrop-filter: blur(22px) saturate(180%);
   box-shadow:
@@ -221,22 +232,30 @@ input[type='date']::-webkit-date-and-time-value {
 }
 /* нижняя панель плавает поверх содержимого */
 .nav-dock {
-  padding: 0 16px var(--nav-gap);
-}
-.nav-dock::before {
-  content: '';
-  position: absolute;
-  inset: -18px 0 0 0;
-  z-index: -1;
-  pointer-events: none;
-  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--bg) 82%, transparent) 70%);
+  padding: 0 12px var(--nav-gap);
 }
 .nav-pad {
-  padding-bottom: calc(var(--nav-gap) + 62px + 24px);
+  padding-bottom: calc(var(--nav-gap) + 62px + 20px);
 }
-/* верхний островок на странице клиента: содержимое мягко уходит под него */
-.island-sticky {
-  background: linear-gradient(to bottom, var(--bg) 0%, color-mix(in srgb, var(--bg) 75%, transparent) 65%, transparent 100%);
+/* круглые «стеклянные» кнопки в шапке */
+.hdr-btn,
+.hdr-actions > button {
+  display: flex;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  transition: transform 160ms ease;
+}
+.hdr-btn:active,
+.hdr-actions > button:active {
+  transform: scale(0.9);
+}
+.hdr-actions svg {
+  width: 24px;
+  height: 24px;
 }
 
 @keyframes pill-stretch {

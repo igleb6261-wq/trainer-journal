@@ -57,27 +57,26 @@ export function TopBar({
   const nav = useNavigate()
   return (
     <InSlot slot="header">
-      <header className="safe-top border-b border-line bg-bar">
-        <div className="relative flex h-12 items-center px-1">
-          {/* слева: «‹ Назад» синим, как в Telegram */}
-          <div className="z-10 flex min-w-[72px] items-center">
+      <header className="safe-top bg-bg">
+        <div className="relative flex h-12 items-center px-3">
+          {/* слева: круглая кнопка «назад» */}
+          <div className="z-10 flex min-w-10 items-center">
             {back && (
               <button
-                className="flex h-11 items-center pl-0.5 pr-2 text-[17px] text-accent-text active:opacity-50"
+                className="hdr-btn glass text-ink"
                 onClick={() => (typeof back === 'string' ? nav(back) : nav(-1))}
                 aria-label="Назад"
               >
-                <IconBack size={28} strokeWidth={2.4} />
-                <span className="-ml-1">Назад</span>
+                <IconBack size={24} strokeWidth={2.4} className="-ml-0.5" />
               </button>
             )}
           </div>
           {/* по центру: заголовок */}
-          <div className="pointer-events-none absolute inset-x-[88px] text-center">
+          <div className="pointer-events-none absolute inset-x-[60px] text-center">
             <div className="truncate text-[17px] font-semibold leading-tight">{title}</div>
             {subtitle && <div className="truncate text-[13px] leading-tight text-muted">{subtitle}</div>}
           </div>
-          <div className="z-10 ml-auto flex min-w-[72px] items-center justify-end text-accent-text">{right}</div>
+          <div className="hdr-actions z-10 ml-auto flex min-w-10 items-center justify-end gap-2 text-ink">{right}</div>
         </div>
       </header>
     </InSlot>

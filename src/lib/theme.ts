@@ -13,12 +13,12 @@ export const applyTheme = (t: Theme) => {
   if (t === 'auto') root.removeAttribute('data-theme')
   else root.setAttribute('data-theme', t)
   const dark = t === 'dark' || (t === 'auto' && !window.matchMedia('(prefers-color-scheme: light)').matches)
-  const color = dark ? '#1c1c1d' : '#f7f7f7'
+  const color = dark ? '#000000' : '#efeff4'
   document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
     if (t === 'auto') {
       // в авто-режиме — свой цвет для каждой темы телефона
       const isDarkMeta = m.getAttribute('media')?.includes('dark')
-      m.setAttribute('content', isDarkMeta ? '#1c1c1d' : '#f7f7f7')
+      m.setAttribute('content', isDarkMeta ? '#000000' : '#efeff4')
     } else m.setAttribute('content', color)
   })
 }

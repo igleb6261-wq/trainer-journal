@@ -161,7 +161,7 @@ export function GhostCamera({
       </div>
 
       {/* низ: таймер, затвор, рамка, смена камеры */}
-      <div className="flex items-center justify-around px-4 pt-4" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}>
+      <div className="flex items-center justify-around px-4 pt-4" style={{ paddingBottom: 'calc(var(--safe-bottom) + 16px)' }}>
         <button
           className="flex h-12 w-14 flex-col items-center justify-center rounded-xl bg-white/15 text-[12px] font-semibold"
           onClick={() => setTimer((t) => (t === 0 ? 3 : t === 3 ? 10 : 0))}

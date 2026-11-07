@@ -149,8 +149,13 @@ export default function ClientPage() {
       </div>
 
       {/* вкладки — овальный островок; по бокам отступ, чтобы ползунок прокрутки его не задевал */}
-      <div className="island-sticky sticky top-0 z-20 mt-2 px-3 pb-2.5 pt-2">
-        <IslandTabs items={TABS} active={tab} onSelect={(k) => setSp({ tab: k }, { replace: true })} />
+      <div className="pointer-events-none sticky top-0 z-20 mt-2 px-3 pb-2 pt-2">
+        <IslandTabs
+          items={TABS}
+          active={tab}
+          className="pointer-events-auto"
+          onSelect={(k) => setSp({ tab: k }, { replace: true })}
+        />
       </div>
 
       <div className="px-4 pb-6">
