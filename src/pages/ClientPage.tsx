@@ -3,7 +3,8 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, deleteClientCascade } from '../db'
 import { Avatar } from '../components/media'
-import { ActionSheet, Button, Card, IconButton, TopBar, confirmAsk, cx, toast } from '../components/ui'
+import { IslandTabs, type IslandItem } from '../components/IslandTabs'
+import { ActionSheet, Button, Card, IconButton, TopBar, confirmAsk, toast } from '../components/ui'
 import {
   IconArchive,
   IconCamera,
@@ -28,12 +29,12 @@ import MeasurementsTab from './client/MeasurementsTab'
 import PhotosTab from './client/PhotosTab'
 
 const TABS = [
-  { key: 'profile', label: 'Анкета', icon: IconClipboard },
-  { key: 'program', label: 'Программа', icon: IconDumbbell },
-  { key: 'history', label: 'История', icon: IconClock },
-  { key: 'measure', label: 'Замеры', icon: IconRuler },
-  { key: 'photos', label: 'Фото', icon: IconCamera },
-] as const
+  { key: 'profile', label: 'Анкета', icon: IconClipboard, anim: 'wiggle' },
+  { key: 'program', label: 'Программа', icon: IconDumbbell, anim: 'lift' },
+  { key: 'history', label: 'История', icon: IconClock, anim: 'tick' },
+  { key: 'measure', label: 'Замеры', icon: IconRuler, anim: 'slide' },
+  { key: 'photos', label: 'Фото', icon: IconCamera, anim: 'pop' },
+] as const satisfies readonly IslandItem<string>[]
 type TabKey = (typeof TABS)[number]['key']
 
 export default function ClientPage() {
@@ -147,23 +148,9 @@ export default function ClientPage() {
         )}
       </div>
 
-      {/* вкладки значками — все пять помещаются на экран */}
-      <div className="sticky top-0 z-20 mt-3 grid grid-cols-5 border-b border-line bg-bar">
-        {TABS.map((t) => {
-          const Icon = t.icon
-          const on = tab === t.key
-          return (
-            <button
-              key={t.key}
-              onClick={() => setSp({ tab: t.key }, { replace: true })}
-              className={cx('relative flex flex-col items-center gap-0.5 pb-2 pt-2.5 text-[11px] font-medium', on ? 'text-accent-text' : 'text-muted')}
-            >
-              <Icon size={21} />
-              {t.label}
-              {on && <span className="absolute inset-x-3 bottom-0 h-[3px] rounded-full bg-accent" />}
-            </button>
-          )
-        })}
+      {/* вкладки — овальный островок; по бокам отступ, чтобы ползунок прокрутки его не задевал */}
+      <div className="island-sticky sticky top-0 z-20 mt-2 px-3 pb-2.5 pt-2">
+        <IslandTabs items={TABS} active={tab} onSelect={(k) => setSp({ tab: k }, { replace: true })} />
       </div>
 
       <div className="px-4 pb-6">

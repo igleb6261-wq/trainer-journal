@@ -188,3 +188,128 @@ input[type='date']::-webkit-date-and-time-value {
 .anim-fade {
   animation: fade-in 180ms ease-out;
 }
+
+/* ============ «Островки» с вкладками (нижняя панель и вкладки клиента) ============ */
+:root {
+  /* отступ островка от низа экрана: над полоской «домой», но не слишком высоко */
+  --nav-gap: max(10px, calc(env(safe-area-inset-bottom) - 8px));
+}
+.island {
+  background: var(--bar);
+  background: color-mix(in srgb, var(--bar) 80%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  box-shadow:
+    0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent),
+    0 10px 30px -8px rgba(0, 0, 0, 0.28),
+    0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.island-pill-track {
+  transition: transform 480ms cubic-bezier(0.34, 1.36, 0.5, 1);
+  will-change: transform;
+}
+.island-pill {
+  background: var(--accent-soft);
+}
+.island-btn {
+  transition:
+    transform 160ms ease,
+    color 260ms ease;
+}
+.island-btn:active {
+  transform: scale(0.9);
+}
+/* нижняя панель плавает поверх содержимого */
+.nav-dock {
+  padding: 0 16px var(--nav-gap);
+}
+.nav-dock::before {
+  content: '';
+  position: absolute;
+  inset: -18px 0 0 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--bg) 82%, transparent) 70%);
+}
+.nav-pad {
+  padding-bottom: calc(var(--nav-gap) + 62px + 24px);
+}
+/* верхний островок на странице клиента: содержимое мягко уходит под него */
+.island-sticky {
+  background: linear-gradient(to bottom, var(--bg) 0%, color-mix(in srgb, var(--bg) 75%, transparent) 65%, transparent 100%);
+}
+
+@keyframes pill-stretch {
+  0% { transform: scale(1, 1); }
+  35% { transform: scale(1.1, 0.92); }
+  70% { transform: scale(0.97, 1.03); }
+  100% { transform: scale(1, 1); }
+}
+.anim-pill {
+  animation: pill-stretch 480ms cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+/* анимации значков при выборе вкладки */
+@keyframes tab-bounce {
+  0% { transform: scale(1); }
+  18% { transform: scale(0.78); }
+  48% { transform: scale(1.2); }
+  72% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+@keyframes tab-flip {
+  0% { transform: perspective(160px) rotateY(0deg); }
+  100% { transform: perspective(160px) rotateY(360deg); }
+}
+@keyframes tab-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  18% { transform: rotate(-15deg) scale(1.08); }
+  40% { transform: rotate(11deg) scale(1.08); }
+  62% { transform: rotate(-6deg); }
+  82% { transform: rotate(3deg); }
+}
+@keyframes tab-spin {
+  0% { transform: rotate(0deg) scale(1); }
+  55% { transform: rotate(200deg) scale(1.1); }
+  100% { transform: rotate(180deg) scale(1); }
+}
+@keyframes tab-lift {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  30% { transform: translateY(-6px) rotate(-12deg); }
+  55% { transform: translateY(1px) rotate(5deg); }
+  78% { transform: translateY(-2px) rotate(-2deg); }
+}
+@keyframes tab-tick {
+  0% { transform: rotate(0deg); }
+  75% { transform: rotate(-380deg); }
+  100% { transform: rotate(-360deg); }
+}
+@keyframes tab-slide {
+  0%, 100% { transform: translateX(0) scaleX(1); }
+  25% { transform: translateX(-5px) scaleX(1.12); }
+  55% { transform: translateX(4px) scaleX(0.94); }
+  80% { transform: translateX(-1px); }
+}
+@keyframes tab-pop {
+  0% { transform: scale(1); opacity: 1; }
+  20% { transform: scale(0.7); opacity: 0.6; }
+  55% { transform: scale(1.22); opacity: 1; }
+  80% { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+.tab-bounce { animation: tab-bounce 560ms cubic-bezier(0.3, 0.7, 0.4, 1); }
+.tab-flip { animation: tab-flip 620ms cubic-bezier(0.4, 0.1, 0.25, 1); }
+.tab-wiggle { animation: tab-wiggle 600ms ease-in-out; }
+.tab-spin { animation: tab-spin 700ms cubic-bezier(0.3, 0.7, 0.4, 1); }
+.tab-lift { animation: tab-lift 620ms ease-in-out; }
+.tab-tick { animation: tab-tick 720ms cubic-bezier(0.3, 0.7, 0.4, 1); }
+.tab-slide { animation: tab-slide 560ms ease-in-out; }
+.tab-pop { animation: tab-pop 520ms cubic-bezier(0.3, 0.7, 0.4, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .island-pill-track { transition: none; }
+  .anim-pill,
+  .tab-bounce, .tab-flip, .tab-wiggle, .tab-spin, .tab-lift, .tab-tick, .tab-slide, .tab-pop {
+    animation: none;
+  }
+}

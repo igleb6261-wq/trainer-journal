@@ -1,8 +1,8 @@
-import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { HashRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
 import { IconCalendar, IconJournal, IconSettings, IconUsers } from './components/icons'
-import { SlotsContext, ToastHost, cx } from './components/ui'
+import { SlotsContext, ToastHost } from './components/ui'
+import { IslandTabs, type IslandItem } from './components/IslandTabs'
 import ClientsList from './pages/ClientsList'
 import ClientForm from './pages/ClientForm'
 import ClientPage from './pages/ClientPage'
@@ -23,39 +23,50 @@ function ScrollTop() {
   return null
 }
 
-function BottomNav() {
-  const item = (to: string, label: string, icon: ReactNode, end = false) => (
-    <NavLink
-      to={to}
-      end={end}
-      className={({ isActive }) =>
-        cx('flex flex-1 flex-col items-center gap-0.5 pt-1.5 text-[11px] font-medium', isActive ? 'text-accent-text' : 'text-muted')
-      }
-    >
-      {icon}
-      {label}
-    </NavLink>
-  )
-  const footer = document.getElementById('footer-slot')
-  const navEl = (
-    <nav className="safe-bottom border-t border-line bg-bar">
-      <div className="flex h-[52px]">
-        {item('/', 'Клиенты', <IconUsers size={25} />, true)}
-        {item('/today', 'Сегодня', <IconCalendar size={25} />)}
-        {item('/journal', 'Журнал', <IconJournal size={25} />)}
-        {item('/settings', 'Настройки', <IconSettings size={25} />)}
-      </div>
-    </nav>
-  )
-  return footer ? createPortal(navEl, footer) : navEl
+const NAV = [
+  { key: 'clients', label: 'Клиенты', icon: IconUsers, anim: 'bounce' },
+  { key: 'today', label: 'Сегодня', icon: IconCalendar, anim: 'flip' },
+  { key: 'journal', label: 'Журнал', icon: IconJournal, anim: 'wiggle' },
+  { key: 'settings', label: 'Настройки', icon: IconSettings, anim: 'spin' },
+] as const satisfies readonly IslandItem<string>[]
+type NavKey = (typeof NAV)[number]['key']
+const NAV_PATH: Record<NavKey, string> = { clients: '/', today: '/today', journal: '/journal', settings: '/settings' }
+
+/** На каких экранах видна нижняя панель и какая вкладка подсвечена */
+function navKeyOf(pathname: string): NavKey | null {
+  if (pathname === '/' || pathname === '') return 'clients'
+  if (pathname === '/today') return 'today'
+  if (pathname === '/journal') return 'journal'
+  if (pathname === '/settings') return 'settings'
+  if (/^\/client\/[^/]+$/.test(pathname) && pathname !== '/client/new') return 'clients'
+  return null
 }
 
-const withNav = (el: ReactNode) => (
-  <>
-    <div className="pb-24">{el}</div>
-    <BottomNav />
-  </>
-)
+/** Нижняя панель — отдельный овальный островок, плавает над содержимым */
+function BottomNav() {
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const key = navKeyOf(pathname)
+  if (!key) return null
+  return (
+    <nav className="nav-dock pointer-events-none absolute inset-x-0 bottom-0 z-30">
+      <IslandTabs
+        items={NAV}
+        active={key}
+        size="lg"
+        className="pointer-events-auto"
+        onSelect={(k) => {
+          const to = NAV_PATH[k]
+          // нажатие на уже открытую вкладку — прокрутить в начало
+          if (to === pathname) document.getElementById('scroller')?.scrollTo({ top: 0, behavior: 'smooth' })
+          else navigate(to)
+        }}
+      />
+    </nav>
+  )
+}
+
+const withNav = (el: ReactNode) => <div className="nav-pad">{el}</div>
 
 export default function App() {
   return (
@@ -63,7 +74,7 @@ export default function App() {
       <ScrollTop />
       <ToastHost />
       <KeyboardBar />
-      <Shell>
+      <Shell nav={<BottomNav />}>
         <Routes>
           <Route path="/" element={withNav(<ClientsList />)} />
           <Route path="/today" element={withNav(<Today />)} />
@@ -86,17 +97,18 @@ export default function App() {
 }
 
 /** Каркас: шапка сверху, прокручиваемое содержимое, нижняя панель снизу */
-function Shell({ children }: { children: ReactNode }) {
+function Shell({ children, nav }: { children: ReactNode; nav: ReactNode }) {
   const [header, setHeader] = useState<HTMLDivElement | null>(null)
   const [footer, setFooter] = useState<HTMLDivElement | null>(null)
   return (
     <SlotsContext.Provider value={{ header, footer }}>
-      <div className="mx-auto flex h-dvh max-w-xl flex-col">
+      <div className="relative mx-auto flex h-dvh max-w-xl flex-col">
         <div ref={setHeader} className="relative z-30 shrink-0" />
         <main id="scroller" className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {header && footer && children}
         </main>
         <div ref={setFooter} id="footer-slot" className="relative z-30 shrink-0" />
+        {header && footer && nav}
       </div>
     </SlotsContext.Provider>
   )

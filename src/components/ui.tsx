@@ -633,7 +633,7 @@ export function Fab({ onClick, label, icon }: { onClick: () => void; label: stri
     <button
       onClick={onClick}
       className="fixed right-4 z-20 flex h-14 items-center gap-2 rounded-full bg-accent px-5 font-semibold text-accent-ink shadow-xl shadow-black/30 active:scale-95"
-      style={{ bottom: 'calc(76px + env(safe-area-inset-bottom) + 12px)' }}
+      style={{ bottom: 'calc(var(--nav-gap) + 62px + 14px)' }}
     >
       {icon}
       {label}
