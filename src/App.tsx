@@ -1,5 +1,5 @@
 import { HashRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { IconCalendar, IconJournal, IconSettings, IconUsers } from './components/icons'
 import { SlotsContext, ToastHost } from './components/ui'
 import { IslandTabs, type IslandItem } from './components/IslandTabs'
@@ -96,15 +96,31 @@ export default function App() {
   )
 }
 
-/** Каркас: шапка сверху, прокручиваемое содержимое, нижняя панель снизу */
+/** Каркас: прозрачная шапка поверх прокручиваемого содержимого, нижняя панель снизу */
 function Shell({ children, nav }: { children: ReactNode; nav: ReactNode }) {
   const [header, setHeader] = useState<HTMLDivElement | null>(null)
   const [footer, setFooter] = useState<HTMLDivElement | null>(null)
+  const shell = useRef<HTMLDivElement>(null)
+  // высота шапки → --hdr-h: на столько сдвигаем содержимое вниз, а липкие элементы прилипают под шапкой
+  useEffect(() => {
+    if (!header) return
+    const set = () => shell.current?.style.setProperty('--hdr-h', `${header.offsetHeight}px`)
+    set()
+    const ro = new ResizeObserver(set)
+    ro.observe(header)
+    return () => ro.disconnect()
+  }, [header])
   return (
     <SlotsContext.Provider value={{ header, footer }}>
-      <div className="relative mx-auto flex h-dvh max-w-xl flex-col">
-        <div ref={setHeader} className="relative z-30 shrink-0" />
-        <main id="scroller" className="no-scrollbar relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <div ref={shell} className="relative mx-auto flex h-dvh max-w-xl flex-col">
+        <div ref={setHeader} className="absolute inset-x-0 top-0 z-30" />
+        <main
+          id="scroller"
+          className="no-scrollbar relative min-h-0 flex-1 overflow-y-auto overscroll-contain"
+          style={{ scrollPaddingTop: 'var(--hdr-h, 0px)' }}
+        >
+          {/* место под шапку (отступ у самой прокрутки ломает «липкие» элементы в Safari) */}
+          <div aria-hidden style={{ height: 'var(--hdr-h, 0px)' }} />
           {header && footer && children}
         </main>
         <div ref={setFooter} id="footer-slot" className="relative z-30 shrink-0" />

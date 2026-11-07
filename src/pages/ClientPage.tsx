@@ -149,7 +149,7 @@ export default function ClientPage() {
       </div>
 
       {/* вкладки — овальный островок; по бокам отступ, чтобы ползунок прокрутки его не задевал */}
-      <div className="pointer-events-none sticky top-0 z-20 mt-2 px-3 pb-2 pt-2">
+      <div className="pointer-events-none sticky top-[var(--hdr-h,0px)] z-20 mt-2 px-3 pb-2 pt-2">
         <IslandTabs
           items={TABS}
           active={tab}

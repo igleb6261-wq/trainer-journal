@@ -57,7 +57,7 @@ export function TopBar({
   const nav = useNavigate()
   return (
     <InSlot slot="header">
-      <header className="safe-top bg-bg">
+      <header className="hdr-glass safe-top">
         <div className="relative flex h-12 items-center px-3">
           {/* слева: круглая кнопка «назад» */}
           <div className="z-10 flex min-w-10 items-center">
