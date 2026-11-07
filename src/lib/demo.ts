@@ -138,9 +138,9 @@ const SPECS: Spec[] = [
     ],
     progress: (w) => w * 2.5,
     measures: [
-      { days: 56, values: { weight: 66.8, waist: 74, belly: 82, glutes: 98, thighL: 58, thighR: 58.5, chest: 90 } },
-      { days: 28, values: { weight: 65.4, waist: 72.5, belly: 80, glutes: 98.5, thighL: 57.5, thighR: 58, chest: 89.5 } },
-      { days: 3, values: { weight: 64.2, waist: 71, belly: 78, glutes: 99, thighL: 57, thighR: 57.5, chest: 89 } },
+      { days: 56, values: { weight: 66.8, waist: 82, glutes: 98, thighL: 58, thighR: 58.5, chest: 90 } },
+      { days: 28, values: { weight: 65.4, waist: 80, glutes: 98.5, thighL: 57.5, thighR: 58, chest: 89.5 } },
+      { days: 3, values: { weight: 64.2, waist: 78, glutes: 99, thighL: 57, thighR: 57.5, chest: 89 } },
     ],
     photoWidths: [120, 108],
   },

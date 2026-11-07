@@ -6,6 +6,8 @@ import { IconPlus } from '../../components/icons'
 import { LineChart } from '../../components/LineChart'
 import { useMetrics } from '../../lib/hooks'
 import { fmtDateLong, fmtDateShort, num, todayISO } from '../../lib/format'
+import { BodyFigure } from '../../components/BodyFigure'
+import { MEASURE_GUIDE, MEASURE_RULES, shortLabel } from '../../lib/measureGuide'
 
 type Draft = { id: string | null; date: string; values: Record<string, number | null>; note: string }
 
@@ -93,7 +95,7 @@ export default function MeasurementsTab({ client }: { client: Client }) {
                 const dFirst = l !== undefined && f !== undefined && rows.length > 1 ? l - f : undefined
                 return (
                   <Card key={m.key} className="px-3 py-2.5" onClick={() => setChartKey(m.key)}>
-                    <div className="truncate text-[12px] text-muted">{m.label}</div>
+                    <div className="truncate text-[12px] text-muted">{shortLabel(m)}</div>
                     <div className="text-[20px] font-semibold tabular">
                       {l !== undefined ? num(l, 1) : '—'} <span className="text-[13px] font-normal text-muted">{m.unit}</span>
                     </div>
@@ -120,7 +122,7 @@ export default function MeasurementsTab({ client }: { client: Client }) {
                       <th className="sticky left-0 z-10 bg-surface px-3 py-2.5 text-left text-[12px] font-semibold text-muted">Дата</th>
                       {used.map((m) => (
                         <th key={m.key} className="min-w-16 max-w-24 whitespace-normal px-3 py-2.5 text-right align-top text-[12px] font-semibold leading-tight text-muted">
-                          {m.label}
+                          {shortLabel(m)}
                           <div className="font-normal">{m.unit}</div>
                         </th>
                       ))}
@@ -183,7 +185,7 @@ export default function MeasurementsTab({ client }: { client: Client }) {
                       chartMetric?.key === m.key ? 'bg-accent text-accent-ink' : 'bg-surface-2 text-muted',
                     )}
                   >
-                    {m.label}
+                    {shortLabel(m)}
                   </button>
                 ))}
               </div>
@@ -224,15 +226,15 @@ export default function MeasurementsTab({ client }: { client: Client }) {
           <div className="space-y-3">
             <Field label="Дата" type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} />
             {draft.date && <div className="-mt-1 px-1 text-xs text-muted">{fmtDateLong(draft.date)}</div>}
-            <div className="grid grid-cols-2 gap-3">
+            <RulesCard />
+            <div className="space-y-2">
               {visible.map((m) => {
                 const last = lastVal(m.key)
                 return (
-                  <NumField
+                  <MetricRow
                     key={m.key}
-                    label={m.label}
-                    suffix={m.unit}
-                    placeholder={last !== undefined && !draft.id ? `было ${num(last, 1)}` : ''}
+                    metric={m}
+                    last={last !== undefined && !draft.id ? num(last, 1) : null}
                     value={draft.values[m.key] ?? null}
                     onChange={(v) => setDraft((d) => (d ? { ...d, values: { ...d.values, [m.key]: v } } : d))}
                   />
@@ -244,5 +246,87 @@ export default function MeasurementsTab({ client }: { client: Client }) {
         )}
       </Sheet>
     </div>
+  )
+}
+
+/** Общие правила замеров — сворачиваемая карточка */
+function RulesCard() {
+  const [open, setOpen] = useState(false)
+  return (
+    <Card className="px-3.5 py-3">
+      <button className="flex w-full items-center justify-between text-left" onClick={() => setOpen((x) => !x)}>
+        <span className="text-[15px] font-medium">Как мерить правильно</span>
+        <span className="text-[14px] text-accent-text">{open ? 'Скрыть' : 'Показать'}</span>
+      </button>
+      {open && (
+        <ul className="mt-2 space-y-1.5 text-[14px] leading-snug">
+          {MEASURE_RULES.map((r) => (
+            <li key={r} className="flex gap-2">
+              <span className="shrink-0 text-up">✓</span>
+              <span>{r}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  )
+}
+
+/** Строка показателя: мини-фигура с местом замера, название, поле. По нажатию — подробная подсказка */
+function MetricRow({
+  metric,
+  value,
+  onChange,
+  last,
+}: {
+  metric: Metric
+  value: number | null
+  onChange: (v: number | null) => void
+  last: string | null
+}) {
+  const guide = MEASURE_GUIDE[metric.key]
+  const [open, setOpen] = useState(false)
+  const toggle = () => guide && setOpen((x) => !x)
+  return (
+    <Card className="overflow-hidden">
+      <div className="flex items-center gap-3 px-2.5 py-2">
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={guide ? `Как мерить: ${metric.label}` : undefined}
+          className={cx('flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-bg/60', guide && 'active:opacity-60')}
+        >
+          {guide ? <BodyFigure zone={guide.zone} mini className="h-[46px] w-[46px]" /> : <span className="text-[20px] text-muted">📏</span>}
+        </button>
+        <button type="button" onClick={toggle} className="min-w-0 flex-1 text-left">
+          <div className="text-[15px] font-medium leading-tight">{metric.label}</div>
+          <div className="mt-0.5 text-[13px]">
+            {guide && <span className="text-accent-text">{open ? 'Скрыть подсказку' : 'Как мерить'}</span>}
+            {guide && last && <span className="text-muted"> · </span>}
+            {last && <span className="text-muted tabular">было {last}</span>}
+          </div>
+        </button>
+        <NumField className="w-[104px] shrink-0" suffix={metric.unit} value={value} onChange={onChange} />
+      </div>
+      {open && guide && (
+        <div className="anim-fade flex gap-3 border-t border-line px-3 pb-3.5 pt-3">
+          <BodyFigure zone={guide.zone} className="h-[230px] w-[102px] shrink-0" />
+          <div className="min-w-0 flex-1 text-[14px] leading-snug">
+            <div className="mb-0.5 text-[12px] font-semibold uppercase tracking-wide text-muted">Где</div>
+            <div>{guide.where}</div>
+            <div className="mb-0.5 mt-2.5 text-[12px] font-semibold uppercase tracking-wide text-muted">Как мерить</div>
+            <ol className="space-y-1">
+              {guide.how.map((h, i) => (
+                <li key={i} className="flex gap-1.5">
+                  <span className="w-3.5 shrink-0 font-semibold tabular text-accent-text">{i + 1}.</span>
+                  <span>{h}</span>
+                </li>
+              ))}
+            </ol>
+            {guide.tip && <div className="mt-2.5 rounded-lg bg-accent-soft px-2.5 py-2 text-[13px]">{guide.tip}</div>}
+          </div>
+        </div>
+      )}
+    </Card>
   )
 }

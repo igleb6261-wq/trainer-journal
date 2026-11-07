@@ -7,12 +7,14 @@ import { applyTheme, getTheme } from './lib/theme'
 import { setupAutoUpdate } from './lib/update'
 import { seedLibrary } from './lib/library'
 import { watchViewport } from './lib/viewport'
+import { migrateMetrics } from './lib/measureGuide'
 
 applyTheme(getTheme())
 watchViewport()
 requestPersistence()
 setupAutoUpdate()
 seedLibrary()
+migrateMetrics()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

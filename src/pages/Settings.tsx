@@ -5,6 +5,7 @@ import { db } from '../db'
 import { Button, Card, Row, Section, Segmented, TopBar, confirmAsk, toast } from '../components/ui'
 import { IconChevron, IconDownload, IconUpload } from '../components/icons'
 import { exportBackup, importBackup, markBackupDone, shareOrDownload } from '../lib/backup'
+import { migrateMetrics } from '../lib/measureGuide'
 import { daysAgo, plural } from '../lib/format'
 import { getTheme, setTheme, type Theme } from '../lib/theme'
 import { deleteDemo, loadDemo } from '../lib/demo'
@@ -58,6 +59,7 @@ export default function Settings() {
     setBusy('import')
     try {
       const r = await importBackup(f)
+      await migrateMetrics()
       toast(`Восстановлено: ${r.clients} ${plural(r.clients, 'клиент', 'клиента', 'клиентов')}`)
     } catch (e) {
       toast((e as Error).message)
