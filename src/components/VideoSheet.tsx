@@ -21,7 +21,14 @@ export function VideoSheet({ name, open, onClose }: { name: string; open: boolea
   const id = videos[Math.min(i, Math.max(0, videos.length - 1))]
   const hasOwn = videos.some(isOwn)
   let libN = 0
-  const labels = videos.map((v) => (isOwn(v) ? 'Моё видео' : `Видео ${++libN}`))
+  let ownN = 0
+  const ownTotal = videos.filter(isOwn).length
+  const oldTotal = videos.length - ownTotal
+  const labels = videos.map((v) =>
+    isOwn(v) ? (ownTotal > 1 ? `Моё ${++ownN}` : 'Моё видео') : ownTotal ? (oldTotal > 1 ? `Старое ${++libN}` : 'Старое') : `Видео ${++libN}`,
+  )
+  const cur = Math.min(i, Math.max(0, videos.length - 1))
+  const touch = useRef<number | null>(null)
 
   const onFile = async (f: File | undefined) => {
     if (!f) return
@@ -62,7 +69,25 @@ export function VideoSheet({ name, open, onClose }: { name: string; open: boolea
           <div className="mt-1 text-sm text-muted">Сними, как ты показываешь технику — видео сохранится в этом упражнении.</div>
         </div>
       ) : (
-        <VideoPlayer id={id} name={name} />
+        <div
+          onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
+          onTouchEnd={(e) => {
+            if (touch.current === null || videos.length < 2) return
+            const dx = e.changedTouches[0].clientX - touch.current
+            touch.current = null
+            if (dx < -50 && cur < videos.length - 1) setI(cur + 1)
+            if (dx > 50 && cur > 0) setI(cur - 1)
+          }}
+        >
+          <VideoPlayer id={id} name={name} />
+          {videos.length > 1 && (
+            <div className="mt-2 flex justify-center gap-1.5">
+              {videos.map((v, k) => (
+                <span key={v} className={cx('h-1.5 rounded-full transition-all', k === cur ? 'w-4 bg-accent' : 'w-1.5 bg-line')} />
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       <div className="mt-3 grid grid-cols-2 gap-2">
@@ -125,12 +150,19 @@ export function VideoSheet({ name, open, onClose }: { name: string; open: boolea
 export function useExerciseVideos(name: string, known?: string[]): string[] {
   return (
     useLiveQuery(async () => {
-      if (known) return known
-      const key = exKey(name)
-      if (!key) return []
-      const e = await db.exercises.where('key').equals(key).first()
-      return e?.videos ?? []
-    }, [name, known]) ?? known ?? []
+      let list = known
+      if (!list) {
+        const key = exKey(name)
+        if (!key) return []
+        const e = await db.exercises.where('key').equals(key).first()
+        list = e?.videos ?? []
+      }
+      // есть твоё видео — старые (из пакета) прячем, если в настройках не включено обратное
+      const own = list.filter(isOwn)
+      if (!own.length) return list
+      const showOld = (await db.settings.get('showOldVideos'))?.value === true
+      return showOld ? [...own, ...list.filter((v) => !isOwn(v))] : own
+    }, [name, known]) ?? []
   )
 }
 

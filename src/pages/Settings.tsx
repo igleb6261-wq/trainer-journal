@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../db'
-import { Button, Card, Row, Section, Segmented, TopBar, confirmAsk, toast } from '../components/ui'
+import { db, setSetting } from '../db'
+import { Button, Card, Row, Section, Segmented, TopBar, confirmAsk, cx, toast } from '../components/ui'
 import { IconChevron, IconDownload, IconUpload } from '../components/icons'
 import { exportBackup, importBackup, markBackupDone, shareOrDownload } from '../lib/backup'
 import { migrateMetrics } from '../lib/measureGuide'
@@ -279,6 +279,7 @@ function VideoPackSection() {
             <IconUpload size={18} /> Загрузить из файла
           </Button>
         )}
+        <OldVideosToggle />
         {stats && stats.count > 0 && !progress && (
           <Button
             variant="ghost"
@@ -308,5 +309,27 @@ function VideoPackSection() {
         />
       </Card>
     </Section>
+  )
+}
+
+/** Переключатель: показывать ли старые видео (из пакета) у упражнений, где уже есть твоё */
+function OldVideosToggle() {
+  const on = useLiveQuery(async () => (await db.settings.get('showOldVideos'))?.value === true, []) ?? false
+  return (
+    <button
+      type="button"
+      onClick={() => setSetting('showOldVideos', !on)}
+      className="mt-3 flex w-full items-center gap-3 rounded-xl bg-surface-2 px-3.5 py-3 text-left"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="text-[15px] font-medium">Показывать старые видео рядом с моими</div>
+        <div className="mt-0.5 text-[13px] text-muted">
+          {on ? 'У упражнений с твоим видео старое открывается свайпом влево' : 'Где есть твоё видео — показывается только оно'}
+        </div>
+      </div>
+      <span className={cx('relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors', on ? 'bg-up' : 'bg-line')}>
+        <span className={cx('absolute top-[2px] h-[27px] w-[27px] rounded-full bg-white shadow transition-all', on ? 'left-[22px]' : 'left-[2px]')} />
+      </span>
+    </button>
   )
 }
