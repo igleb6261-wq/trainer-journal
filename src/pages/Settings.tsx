@@ -314,7 +314,7 @@ function VideoPackSection() {
 
 /** Переключатель: показывать ли старые видео (из пакета) у упражнений, где уже есть твоё */
 function OldVideosToggle() {
-  const on = useLiveQuery(async () => (await db.settings.get('showOldVideos'))?.value === true, []) ?? false
+  const on = useLiveQuery(async () => (await db.settings.get('showOldVideos'))?.value !== false, []) ?? true
   return (
     <button
       type="button"

@@ -157,10 +157,10 @@ export function useExerciseVideos(name: string, known?: string[]): string[] {
         const e = await db.exercises.where('key').equals(key).first()
         list = e?.videos ?? []
       }
-      // есть твоё видео — старые (из пакета) прячем, если в настройках не включено обратное
+      // твоё видео — первым, старые (из пакета) после него свайпом; в настройках их можно скрыть
       const own = list.filter(isOwn)
       if (!own.length) return list
-      const showOld = (await db.settings.get('showOldVideos'))?.value === true
+      const showOld = (await db.settings.get('showOldVideos'))?.value !== false
       return showOld ? [...own, ...list.filter((v) => !isOwn(v))] : own
     }, [name, known]) ?? []
   )

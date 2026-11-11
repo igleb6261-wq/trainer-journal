@@ -7,6 +7,9 @@ import { db, exKey, stamp, uid } from '../db'
 
 export const OWN_PREFIX = 'own-'
 export const isOwn = (id: string) => id.startsWith(OWN_PREFIX)
+/** Свои видео из зашифрованного пакета на сайте: в резервную копию не входят — их можно скачать заново */
+export const OWN_PACK_PREFIX = 'own-pack-'
+export const isPackOwn = (id: string) => id.startsWith(OWN_PACK_PREFIX)
 
 /** Сохраняет своё видео к упражнению (заменяет прежнее своё, если было) */
 export async function saveOwnVideo(name: string, file: Blob): Promise<void> {

@@ -1,0 +1,11 @@
+{
+ "parts": [
+  "own/part-01.bin",
+  "own/part-02.bin",
+  "own/part-03.bin",
+  "own/part-04.bin",
+  "own/part-05.bin",
+  "own/part-06.bin",
+  "own/part-07.bin"
+ ]
+}

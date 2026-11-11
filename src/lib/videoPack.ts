@@ -28,13 +28,10 @@ export async function importVideoPack(
   return importPackBuffer(buf, onProgress, wrong)
 }
 
-/** Скачивает зашифрованный пакет видео с сайта и расшифровывает паролем */
-export async function downloadVideoPack(
-  password: string,
-  onProgress?: (text: string) => void,
-): Promise<{ videos: number; exercises: number }> {
-  onProgress?.('Скачиваю видео…')
-  const res = await fetch(`${import.meta.env.BASE_URL}videos.bin`, { cache: 'no-store' })
+/** Скачивает файл с сайта целиком, показывая проценты */
+async function fetchBytes(path: string, label: string, onProgress?: (text: string) => void): Promise<Uint8Array<ArrayBuffer>> {
+  onProgress?.(`${label}…`)
+  const res = await fetch(`${import.meta.env.BASE_URL}${path}`, { cache: 'no-store' })
   if (!res.ok || !res.body) throw new Error('Не удалось скачать видео. Проверь интернет и попробуй ещё раз')
   const total = Number(res.headers.get('content-length')) || 0
   const reader = res.body.getReader()
@@ -45,7 +42,7 @@ export async function downloadVideoPack(
     if (done) break
     parts.push(value)
     got += value.length
-    onProgress?.(total ? `Скачиваю видео: ${Math.round((got / total) * 100)}%` : `Скачиваю видео: ${(got / 1048576).toFixed(0)} МБ`)
+    onProgress?.(total ? `${label}: ${Math.round((got / total) * 100)}%` : `${label}: ${(got / 1048576).toFixed(0)} МБ`)
   }
   const all = new Uint8Array(got)
   let o = 0
@@ -53,7 +50,11 @@ export async function downloadVideoPack(
     all.set(p, o)
     o += p.length
   }
-  parts.length = 0
+  return all
+}
+
+/** Расшифровывает файл "TJENC1" паролем (PBKDF2 + AES-GCM) */
+async function decryptPack(all: Uint8Array<ArrayBuffer>, password: string, onProgress?: (text: string) => void): Promise<ArrayBuffer> {
   const MAG = 'TJENC1\n'
   if (new TextDecoder().decode(all.subarray(0, MAG.length)) !== MAG) throw new Error('Файл с видео на сайте повреждён')
   const salt = all.subarray(MAG.length, MAG.length + 16)
@@ -68,13 +69,52 @@ export async function downloadVideoPack(
     false,
     ['decrypt'],
   )
-  let plain: ArrayBuffer
   try {
-    plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data)
+    return await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data)
   } catch {
     throw new Error('Неверный пароль')
   }
-  return importPackBuffer(plain, (d, t) => onProgress?.(`Сохраняю видео: ${d} из ${t}`), (why) => new Error(why))
+}
+
+/** Список частей с твоими видео (own/index.json); нет файла — частей нет */
+async function ownParts(): Promise<string[]> {
+  try {
+    const res = await fetch(`${import.meta.env.BASE_URL}own/index.json`, { cache: 'no-store' })
+    if (!res.ok) return []
+    const j = (await res.json()) as { parts?: string[] }
+    return Array.isArray(j.parts) ? j.parts : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Скачивает зашифрованные видео с сайта и расшифровывает паролем:
+ * сначала общий пакет (videos.bin, если его ещё нет в телефоне), затем части с твоими видео.
+ */
+export async function downloadVideoPack(
+  password: string,
+  onProgress?: (text: string) => void,
+): Promise<{ videos: number; exercises: number }> {
+  const parts = await ownParts()
+  const keys = (await db.videos.toCollection().primaryKeys()).map(String)
+  const hasLibrary = keys.some((k) => !k.startsWith('own-'))
+  let videos = 0
+  let exercises = 0
+  if (!hasLibrary || !parts.length) {
+    const plain = await decryptPack(await fetchBytes('videos.bin', 'Скачиваю видео', onProgress), password, onProgress)
+    const r = await importPackBuffer(plain, (d, t) => onProgress?.(`Сохраняю видео: ${d} из ${t}`), (why) => new Error(why))
+    videos += r.videos
+    exercises += r.exercises
+  }
+  for (let k = 0; k < parts.length; k++) {
+    const label = `Мои видео: часть ${k + 1} из ${parts.length}`
+    const plain = await decryptPack(await fetchBytes(parts[k], label, onProgress), password, onProgress)
+    const r = await importPackBuffer(plain, (d, t) => onProgress?.(`${label}, сохраняю ${d} из ${t}`), (why) => new Error(why))
+    videos += r.videos
+    exercises += r.exercises
+  }
+  return { videos, exercises }
 }
 
 async function importPackBuffer(

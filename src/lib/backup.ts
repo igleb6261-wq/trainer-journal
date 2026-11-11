@@ -19,7 +19,8 @@ export async function exportBackup(): Promise<File> {
     db.settings.toArray(),
   ])
   // свои видео техники (видео из библиотеки в копию не входят — они загружаются отдельно)
-  const own = await db.videos.filter((v) => v.id.startsWith('own-')).toArray()
+  // свои видео из пакета на сайте (own-pack-) тоже не входят — они скачиваются заново по паролю
+  const own = await db.videos.filter((v) => v.id.startsWith('own-') && !v.id.startsWith('own-pack-')).toArray()
   const ownVideos: { id: string; blob: string }[] = []
   for (const v of own) ownVideos.push({ id: v.id, blob: await blobToDataURL(v.blob) })
   const photosJson: PhotoJSON[] = []
@@ -107,7 +108,7 @@ export async function importBackup(file: File): Promise<{ clients: number; worko
       await db.photos.bulkPut(photos)
       await db.exercises.bulkPut(t.exercises ?? [])
       await db.settings.bulkPut(t.settings ?? [])
-      await db.videos.bulkDelete((await db.videos.toCollection().primaryKeys()).filter((k) => String(k).startsWith('own-')))
+      await db.videos.bulkDelete((await db.videos.toCollection().primaryKeys()).filter((k) => String(k).startsWith('own-') && !String(k).startsWith('own-pack-')))
     },
   )
   for (const v of (t.ownVideos ?? []) as { id: string; blob: string }[]) {
