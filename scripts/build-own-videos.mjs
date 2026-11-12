@@ -51,16 +51,24 @@ function askHidden(q) {
     stdin.setRawMode(true)
     stdin.resume()
     stdin.setEncoding('utf8')
-    const on = (ch) => {
+    const on = (chunk) => {
+      // a paste arrives as one chunk, wrapped in bracketed-paste markers
+      // (ESC[200~ … ESC[201~) by the terminal: drop them, then go char by char
+      for (const ch of chunk.replace(/\x1b\[20[01]~/g, '')) if (key(ch)) return
+    }
+    const key = (ch) => {
       if (ch === '\r' || ch === '\n') {
+        // a stray Enter left over from launching the command: keep waiting
+        if (!s) return false
         stdin.setRawMode(false)
         stdin.pause()
         stdin.off('data', on)
         stdout.write('\n')
         res(s)
+        return true
       } else if (ch === '\u0003') process.exit(1)
       else if (ch === '\u007f') s = s.slice(0, -1)
-      else s += ch
+      else if (ch >= ' ') s += ch
     }
     stdin.on('data', on)
   })
@@ -119,12 +127,20 @@ if (!todo.length) {
 }
 console.log(`Videos to pack: ${todo.length}`)
 
-const password = await askHidden('Пароль для видео (тот же, что в приложении): ')
-try {
-  await decrypt(readFileSync(join(ROOT, 'public', 'videos.bin')), password)
-} catch {
-  console.error('Пароль не подошёл к videos.bin — ничего не сделано.')
-  process.exit(1)
+const libPack = readFileSync(join(ROOT, 'public', 'videos.bin'))
+let password = ''
+for (let attempt = 1; ; attempt++) {
+  password = await askHidden('Пароль для видео (тот же, что в приложении): ')
+  try {
+    await decrypt(libPack, password)
+    break
+  } catch {
+    if (attempt >= 3 || !stdin.isTTY) {
+      console.error('Пароль не подошёл к videos.bin — ничего не сделано.')
+      process.exit(1)
+    }
+    console.error('Пароль не подошёл. Проверь английскую раскладку и попробуй ещё раз.')
+  }
 }
 
 // group into parts of up to PART_LIMIT
@@ -154,6 +170,8 @@ for (const g of groups) {
   state.parts.push({ file: name, items: g.map(sig) })
   console.log(`${name}: ${g.length} videos, ${(enc.length / 1048576).toFixed(1)} MB`)
 }
-writeFileSync(join(OUT, 'index.json'), JSON.stringify({ parts: state.parts.map((p) => p.file) }, null, 1) + '\n')
+// ids per part let the app skip parts it already has
+const ids = Object.fromEntries(state.parts.map((p) => [p.file, p.items.map((sg) => idOf(sg.split('|')[0]))]))
+writeFileSync(join(OUT, 'index.json'), JSON.stringify({ parts: state.parts.map((p) => p.file), ids }, null, 1) + '\n')
 writeFileSync(statePath, JSON.stringify(state, null, 1) + '\n')
 console.log('Готово.')

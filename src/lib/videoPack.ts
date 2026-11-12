@@ -1,4 +1,4 @@
-import { db, exKey, stamp, type ExerciseRef } from '../db'
+import { db, exKey, getSetting, setSetting, stamp, type ExerciseRef } from '../db'
 
 /* ============================================================
    Загрузка пакета видео техники (.tjvideos) в память телефона.
@@ -77,14 +77,14 @@ async function decryptPack(all: Uint8Array<ArrayBuffer>, password: string, onPro
 }
 
 /** Список частей с твоими видео (own/index.json); нет файла — частей нет */
-async function ownParts(): Promise<string[]> {
+async function ownParts(): Promise<{ parts: string[]; ids: Record<string, string[]> }> {
   try {
     const res = await fetch(`${import.meta.env.BASE_URL}own/index.json`, { cache: 'no-store' })
-    if (!res.ok) return []
-    const j = (await res.json()) as { parts?: string[] }
-    return Array.isArray(j.parts) ? j.parts : []
+    if (!res.ok) return { parts: [], ids: {} }
+    const j = (await res.json()) as { parts?: string[]; ids?: Record<string, string[]> }
+    return { parts: Array.isArray(j.parts) ? j.parts : [], ids: j.ids ?? {} }
   } catch {
-    return []
+    return { parts: [], ids: {} }
   }
 }
 
@@ -96,7 +96,7 @@ export async function downloadVideoPack(
   password: string,
   onProgress?: (text: string) => void,
 ): Promise<{ videos: number; exercises: number }> {
-  const parts = await ownParts()
+  const { parts, ids: partIds } = await ownParts()
   const keys = (await db.videos.toCollection().primaryKeys()).map(String)
   const hasLibrary = keys.some((k) => !k.startsWith('own-'))
   let videos = 0
@@ -107,13 +107,24 @@ export async function downloadVideoPack(
     videos += r.videos
     exercises += r.exercises
   }
+  // Уже скачанные части не качаем повторно: часть пропускается, если она
+  // отмечена скачанной и все её видео на месте (после очистки видео — качаем).
+  // Пересъёмка лежит в новой части, которой нет в списке, поэтому скачается.
+  const have = new Set(keys)
+  const complete = (p: string) => !!partIds[p]?.length && partIds[p].every((id) => have.has(id))
+  let done = await getSetting<string[] | null>('ownPartsDone', null)
+  if (!done) done = parts.filter(complete) // первый запуск после обновления
   for (let k = 0; k < parts.length; k++) {
+    if (done.includes(parts[k]) && complete(parts[k])) continue
     const label = `Мои видео: часть ${k + 1} из ${parts.length}`
     const plain = await decryptPack(await fetchBytes(parts[k], label, onProgress), password, onProgress)
     const r = await importPackBuffer(plain, (d, t) => onProgress?.(`${label}, сохраняю ${d} из ${t}`), (why) => new Error(why))
     videos += r.videos
     exercises += r.exercises
+    done = [...done.filter((p) => p !== parts[k]), parts[k]]
+    await setSetting('ownPartsDone', done)
   }
+  await setSetting('ownPartsDone', done)
   return { videos, exercises }
 }
 
