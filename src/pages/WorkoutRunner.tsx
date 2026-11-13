@@ -191,9 +191,9 @@ export default function WorkoutRunner() {
                       {allDone && <IconCheck size={16} className="shrink-0 text-up" />}
                     </div>
                     {e.target && <div className="mt-0.5 text-[13px] text-muted tabular">План: {e.target}</div>}
-                    <VideoButton name={e.name} className="mt-1.5 w-fit" />
                     {e.planNote && <div className="mt-0.5 text-[13px] italic text-muted">{e.planNote}</div>}
                   </div>
+                  <VideoButton name={e.name} className="mt-0.5 h-9 px-3" />
                   <IconButton className="-mr-2 -mt-1 h-9 w-9 text-muted" onClick={() => setExMenu(e.id)}>
                     <IconMore size={20} />
                   </IconButton>

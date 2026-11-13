@@ -13,6 +13,10 @@ export default function HistoryTab({ client }: { client: Client }) {
   const nav = useNavigate()
   const [open, setOpen] = useState<Record<string, boolean>>({})
   const all = useLiveQuery(async () => (await db.workouts.where('clientId').equals(client.id).toArray()).sort(sortDesc), [client.id])
+  const programs = useLiveQuery(
+    async () => new Map((await db.programs.where('clientId').equals(client.id).toArray()).map((p) => [p.id, p.name])),
+    [client.id],
+  )
 
   if (!all) return null
   const done = all.filter((w) => w.status === 'done')
@@ -28,7 +32,9 @@ export default function HistoryTab({ client }: { client: Client }) {
 
       <div className="mt-4 space-y-3">
         {done.map((w) => {
-          const { chips, unchanged } = workoutSummary(w, all)
+          const { chips: allChips, unchanged } = workoutSummary(w, all)
+          // комментарии к упражнениям показаны под самими упражнениями — без дублей
+          const chips = allChips.filter((c) => c.kind !== 'note')
           const isOpen = !!open[w.id]
           return (
             <SwipeToDelete
@@ -48,40 +54,42 @@ export default function HistoryTab({ client }: { client: Client }) {
                       {fmtDateLong(w.date)}
                       <span className="font-normal text-muted">, {weekday(w.date)}</span>
                     </div>
+                    {w.dayName ? (
+                      <div className="mt-0.5 text-[15px] font-medium text-accent-text">{w.dayName}</div>
+                    ) : (
+                      <div className="mt-0.5 text-[15px] text-muted">Свободная тренировка</div>
+                    )}
                     <div className="text-[13px] text-muted">
-                      {w.dayName || 'Свободная тренировка'} · {w.exercises.length} упр.
+                      {[w.programId && programs?.get(w.programId), `${w.exercises.length} упр.`].filter(Boolean).join(' · ')}
                     </div>
                   </div>
                   <IconDown size={20} className={cx('mt-1 shrink-0 text-muted transition', isOpen && 'rotate-180')} />
                 </div>
-
-                {(chips.length > 0 || unchanged > 0) && (
-                  <div className="mt-2.5 flex flex-wrap gap-1.5">
-                    {chips.map((c, i) => (
-                      <Chip
-                        key={i}
-                        tone={c.kind === 'up' ? 'up' : c.kind === 'down' ? 'down' : c.kind === 'new' ? 'accent' : c.kind === 'note' ? 'note' : 'muted'}
-                      >
-                        {c.kind === 'note' ? '💬 ' : ''}
-                        {c.text}
-                      </Chip>
-                    ))}
-                    {unchanged > 0 && <Chip>без изменений: {unchanged}</Chip>}
-                  </div>
-                )}
-
-                {w.comment && <div className="mt-2.5 line-clamp-2 whitespace-pre-wrap text-sm text-muted">{w.comment}</div>}
-                {w.nextNote && (
-                  <div className="mt-2 flex gap-1.5 text-sm text-note">
-                    <IconFlag size={14} className="mt-0.5 shrink-0" />
-                    <span className={cx('whitespace-pre-wrap', !isOpen && 'line-clamp-2')}>{w.nextNote}</span>
-                  </div>
-                )}
                 <div className="h-3" />
               </button>
 
               {isOpen && (
                 <div className="border-t border-line bg-surface-2/40 px-4 py-3">
+                  {(chips.length > 0 || unchanged > 0) && (
+                    <div className="mb-3 flex flex-wrap gap-1.5">
+                      {chips.map((c, i) => (
+                        <Chip
+                          key={i}
+                          tone={c.kind === 'up' ? 'up' : c.kind === 'down' ? 'down' : c.kind === 'new' ? 'accent' : c.kind === 'note' ? 'note' : 'muted'}
+                        >
+                          {c.kind === 'note' ? '💬 ' : ''}
+                          {c.text}
+                        </Chip>
+                      ))}
+                      {unchanged > 0 && <Chip>без изменений: {unchanged}</Chip>}
+                    </div>
+                  )}
+                  {w.nextNote && (
+                    <div className="mb-3 flex gap-1.5 text-sm text-note">
+                      <IconFlag size={14} className="mt-0.5 shrink-0" />
+                      <span className="whitespace-pre-wrap">{w.nextNote}</span>
+                    </div>
+                  )}
                   <div className="space-y-3">
                     {w.exercises.map((e, i) => (
                       <div key={e.id}>

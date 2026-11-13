@@ -170,7 +170,6 @@ export function useExerciseVideos(name: string, known?: string[]): string[] {
 export function VideoButton({ name, className, videos: known }: { name: string; className?: string; videos?: string[] }) {
   const videos = useExerciseVideos(name, known)
   const [open, setOpen] = useState(false)
-  const own = videos.some(isOwn)
   const none = videos.length === 0
   return (
     <>
@@ -187,16 +186,12 @@ export function VideoButton({ name, className, videos: known }: { name: string; 
           className,
         )}
       >
-        {none ? (
-          <>+ Видео</>
-        ) : (
-          <>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-              <path d="M6 4l14 8-14 8z" />
-            </svg>
-            {own ? 'Моё видео' : 'Техника'}
-          </>
+        {!none && (
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <path d="M6 4l14 8-14 8z" />
+          </svg>
         )}
+        Техника
       </button>
       <VideoSheet name={name} open={open} onClose={() => setOpen(false)} />
     </>

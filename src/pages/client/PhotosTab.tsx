@@ -73,12 +73,8 @@ export default function PhotosTab({ client }: { client: Client }) {
           До/после
         </Button>
       </div>
-      <div className="mt-1.5 px-1 text-[12px] text-muted">
-        «Снять» — камера с рамкой: поверх видно прошлое фото того же ракурса, чтобы клиент встал так же.
-      </div>
       {camera && (
         <GhostCamera
-          clientId={client.id}
           onClose={() => setCamera(false)}
           onFallback={() => {
             setCamera(false)
