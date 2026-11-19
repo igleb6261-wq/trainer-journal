@@ -4,46 +4,21 @@ import { db, exKey, stamp } from '../db'
 import { videoEmbedUrl, videoOpenUrl } from '../lib/library'
 import { builtinTechnique, parseTechnique, techniqueToText } from '../lib/techniqueText'
 import { Button, Card, Sheet, TextArea, confirmAsk, cx, toast } from './ui'
-import { IconCamera } from './icons'
-import { deleteOwnVideo, fmtMb, isOwn, saveOwnVideo } from '../lib/ownVideo'
+import { isOwn } from '../lib/ownVideo'
+import { matchExercise } from '../lib/exerciseMatch'
 import { useBlobUrl } from './media'
 
 /** Видео техники упражнения во всплывающей шторке */
 export function VideoSheet({ name, open, onClose }: { name: string; open: boolean; onClose: () => void }) {
   const videos = useExerciseVideos(name)
   const [i, setI] = useState(0)
-  const [busy, setBusy] = useState(false)
-  const cam = useRef<HTMLInputElement>(null)
-  const gallery = useRef<HTMLInputElement>(null)
   useEffect(() => {
     if (open) setI(0)
   }, [open, name])
   const id = videos[Math.min(i, Math.max(0, videos.length - 1))]
-  const hasOwn = videos.some(isOwn)
-  let libN = 0
-  let ownN = 0
-  const ownTotal = videos.filter(isOwn).length
-  const oldTotal = videos.length - ownTotal
-  const labels = videos.map((v) =>
-    isOwn(v) ? (ownTotal > 1 ? `Моё ${++ownN}` : 'Моё видео') : ownTotal ? (oldTotal > 1 ? `Старое ${++libN}` : 'Старое') : `Видео ${++libN}`,
-  )
+  const labels = videos.map((_, k) => `Видео ${k + 1}`)
   const cur = Math.min(i, Math.max(0, videos.length - 1))
   const touch = useRef<number | null>(null)
-
-  const onFile = async (f: File | undefined) => {
-    if (!f) return
-    if (hasOwn && !confirmAsk('Заменить твоё прежнее видео этим?')) return
-    setBusy(true)
-    try {
-      await saveOwnVideo(name, f)
-      setI(0)
-      toast(`Твоё видео сохранено (${fmtMb(f.size)})`)
-    } catch (e) {
-      toast('Не удалось сохранить видео: ' + (e as Error).message)
-    } finally {
-      setBusy(false)
-    }
-  }
 
   return (
     <Sheet open={open} onClose={onClose} title={name} tall>
@@ -66,7 +41,7 @@ export function VideoSheet({ name, open, onClose }: { name: string; open: boolea
       {!id ? (
         <div className="rounded-2xl bg-surface px-6 py-10 text-center">
           <div className="text-[15px] font-semibold">Видео пока нет</div>
-          <div className="mt-1 text-sm text-muted">Сними, как ты показываешь технику — видео сохранится в этом упражнении.</div>
+          <div className="mt-1 text-sm text-muted">Описание техники — ниже.</div>
         </div>
       ) : (
         <div
@@ -90,59 +65,25 @@ export function VideoSheet({ name, open, onClose }: { name: string; open: boolea
         </div>
       )}
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <Button variant="primary" disabled={busy} onClick={() => cam.current?.click()}>
-          <IconCamera size={18} /> {busy ? 'Сохраняю…' : hasOwn ? 'Переснять' : 'Снять своё'}
-        </Button>
-        <Button disabled={busy} onClick={() => gallery.current?.click()}>
-          Из галереи
-        </Button>
-      </div>
-
       <TechniqueBlock name={name} />
-
-      {id && isOwn(id) && (
-        <Button
-          variant="ghost"
-          block
-          className="mt-3 text-danger"
-          onClick={async () => {
-            if (!confirmAsk('Удалить твоё видео для этого упражнения?')) return
-            await deleteOwnVideo(name, id)
-            setI(0)
-            toast('Видео удалено')
-          }}
-        >
-          Удалить моё видео
-        </Button>
-      )}
-      <div className="mt-3 px-1 text-center text-xs text-muted">
-        Свои видео хранятся только в телефоне и попадают в резервную копию. Снимай короткие ролики, 5–15 секунд.
-      </div>
-      <input
-        ref={cam}
-        type="file"
-        accept="video/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0]
-          e.target.value = ''
-          onFile(f)
-        }}
-      />
-      <input
-        ref={gallery}
-        type="file"
-        accept="video/*"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0]
-          e.target.value = ''
-          onFile(f)
-        }}
-      />
     </Sheet>
+  )
+}
+
+/**
+ * Название упражнения из библиотеки, у которого есть видео: точное совпадение
+ * или похожее (см. matchExercise). Если ничего не нашлось — исходное название.
+ */
+export function useResolvedName(name: string): string {
+  return (
+    useLiveQuery(async () => {
+      const key = exKey(name)
+      if (!key) return name
+      const exact = await db.exercises.where('key').equals(key).first()
+      if (exact?.videos?.length) return exact.name
+      const withVideo = await db.exercises.filter((e) => !!e.videos?.length).toArray()
+      return matchExercise(name, withVideo) ?? name
+    }, [name]) ?? name
   )
 }
 
@@ -167,7 +108,10 @@ export function useExerciseVideos(name: string, known?: string[]): string[] {
 }
 
 /** Маленькая кнопка ▶, видна только если у упражнения есть видео */
-export function VideoButton({ name, className, videos: known }: { name: string; className?: string; videos?: string[] }) {
+export function VideoButton({ name: raw, className, videos: known }: { name: string; className?: string; videos?: string[] }) {
+  // в библиотеке — само упражнение; в программах — похожее из библиотеки, если название записано иначе
+  const resolved = useResolvedName(raw)
+  const name = known ? raw : resolved
   const videos = useExerciseVideos(name, known)
   const [open, setOpen] = useState(false)
   const none = videos.length === 0
@@ -205,8 +149,8 @@ function VideoPlayer({ id, name }: { id: string; name: string }) {
   if (local === undefined) return <div className="rounded-2xl bg-black" style={{ height: '50dvh' }} />
   if (url)
     return (
-      <div className="flex items-center justify-center overflow-hidden rounded-2xl bg-white" style={{ maxHeight: '50dvh' }}>
-        <video key={id} src={url} className="max-h-[50dvh] w-full object-contain" autoPlay loop muted playsInline controls />
+      <div className="flex justify-center">
+        <video key={id} src={url} className="block max-h-[50dvh] max-w-full rounded-2xl" autoPlay loop muted playsInline controls />
       </div>
     )
   return (

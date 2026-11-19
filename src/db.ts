@@ -1,3 +1,4 @@
+import { matchExercise } from './lib/exerciseMatch'
 import Dexie, { type EntityTable } from 'dexie'
 
 /* ============================================================
@@ -244,7 +245,25 @@ export async function rememberExercise(name: string) {
   if (!n) return
   const key = exKey(n)
   const exists = await db.exercises.where('key').equals(key).first()
-  if (!exists) await db.exercises.add({ ...stamp(), name: n, key })
+  if (exists) return
+  // похожее упражнение с видео уже есть в библиотеке — дубль не заводим
+  const withVideo = await db.exercises.filter((e) => !!e.videos?.length).toArray()
+  if (matchExercise(n, withVideo)) return
+  await db.exercises.add({ ...stamp(), name: n, key })
+}
+
+/**
+ * Убирает из библиотеки дубли, которые приложение само завело из программ
+ * («Тяга верхнего блока» рядом с «Тяга верхнего блока к груди»): без группы,
+ * без видео и без своего описания, если есть похожее упражнение с видео.
+ */
+export async function mergeDuplicateExercises() {
+  const all = await db.exercises.toArray()
+  const withVideo = all.filter((e) => !!e.videos?.length)
+  const dupes = all.filter(
+    (e) => !e.group && !e.videos?.length && !e.technique?.trim() && !e.basic && matchExercise(e.name, withVideo),
+  )
+  if (dupes.length) await db.exercises.bulkDelete(dupes.map((e) => e.id))
 }
 
 /* ---------------- Удаление клиента целиком ---------------- */

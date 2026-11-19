@@ -18,6 +18,9 @@ const sortDesc = (a: Workout, b: Workout) => (a.date === b.date ? b.createdAt - 
 const cell =
   'w-full rounded-lg border border-transparent bg-surface-2 px-1 py-2.5 text-center text-[17px] font-medium outline-none tabular focus:border-accent-text'
 
+/** Тренировки, экран которых сейчас открыт */
+const openRunners = new Set<string>()
+
 export default function WorkoutRunner() {
   const { id = '', workoutId = '' } = useParams()
   const nav = useNavigate()
@@ -38,13 +41,21 @@ export default function WorkoutRunner() {
     db.workouts.get(workoutId).then((x) => setW(x ?? null))
   }, [workoutId])
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    openRunners.add(workoutId)
+    return () => {
+      openRunners.delete(workoutId)
       window.clearTimeout(saveTimer.current)
       if (latest.current) db.workouts.put(latest.current)
-    },
-    [],
-  )
+      // открыли новую тренировку и вышли, ничего не трогая — не считаем её начатой
+      else
+        window.setTimeout(async () => {
+          if (openRunners.has(workoutId)) return // экран открыт снова
+          const x = await db.workouts.get(workoutId)
+          if (x && x.status === 'active' && x.updatedAt === x.createdAt) await db.workouts.delete(x.id)
+        }, 400)
+    }
+  }, [workoutId])
 
   const update = (fn: (w: Workout) => Workout) => {
     setW((cur) => {

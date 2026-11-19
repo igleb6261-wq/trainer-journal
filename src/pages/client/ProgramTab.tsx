@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, stamp, uid, type Client, type Program } from '../../db'
 import { ActionSheet, Button, Card, Empty, IconButton, Section, Sheet, confirmAsk, toast } from '../../components/ui'
-import { IconChevron, IconEdit, IconMore, IconPlay, IconPlus, IconTrash } from '../../components/icons'
-import { planTarget, startWorkout } from '../../lib/workout'
+import { IconCheck, IconChevron, IconEdit, IconMore, IconPlay, IconPlus, IconTrash } from '../../components/icons'
+import { finishWorkout, planTarget, startWorkout } from '../../lib/workout'
 import { fmtDate } from '../../lib/format'
 import { nextProgramDay } from '../../lib/schedule'
 
@@ -61,13 +61,30 @@ export default function ProgramTab({ client, activeWorkoutId }: { client: Client
     nav(`/client/${client.id}/program/${id}`)
   }
 
+  /** Завершить начатую тренировку, не открывая её */
+  const finishActive = async (wid: string) => {
+    const w = await db.workouts.get(wid)
+    if (!w) return
+    const total = w.exercises.reduce((a, e) => a + e.sets.length, 0)
+    const doneSets = w.exercises.reduce((a, e) => a + e.sets.filter((x) => x.done).length, 0)
+    const q = doneSets < total ? `Отмечено ${doneSets} из ${total} подходов. Завершить тренировку?` : 'Завершить тренировку?'
+    if (!confirmAsk(q)) return
+    await finishWorkout(w)
+    toast('Тренировка сохранена в истории')
+  }
+
   return (
     <div>
       <div className="mt-4">
         {activeWorkoutId ? (
-          <Button variant="primary" size="lg" block onClick={() => nav(`/client/${client.id}/workout/${activeWorkoutId}`)}>
-            <IconPlay size={18} /> Продолжить тренировку
-          </Button>
+          <div className="grid grid-cols-[1.4fr_1fr] gap-2">
+            <Button variant="primary" size="lg" onClick={() => nav(`/client/${client.id}/workout/${activeWorkoutId}`)}>
+              <IconPlay size={18} /> Продолжить
+            </Button>
+            <Button size="lg" onClick={() => finishActive(activeWorkoutId)}>
+              <IconCheck size={18} /> Завершить
+            </Button>
+          </div>
         ) : next ? (
           <>
             <Button variant="primary" size="lg" block onClick={() => begin(next.id)}>
